@@ -59,9 +59,9 @@ export class SubRoomService {
         title: 'PIN required',
         content: '',
         cancelText: 'Cancel',
-        cancelCallback: undefined,
+        cancelCallback: () => this.disconnect(),
         acceptText: 'Confirm',
-        acceptCallback: (pin: string) => {this.pexRtcSubRoom.connect(pin); console.log(pin)},
+        acceptCallback: (pin: string) => {this.pexRtcSubRoom.connect(pin)},
         selectValues: undefined,
         pinRequired: pinRequired
       });
@@ -84,6 +84,7 @@ export class SubRoomService {
       content: `An error was detected: ${reason}`,
       cancelText: 'Close'
     });
+    this.disconnectCallback();
   }
 
 }

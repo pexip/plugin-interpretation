@@ -44,7 +44,13 @@ export class Dialog extends Component<IProps> {
             </div>
           }
           { this.props.selectValues && <Select className="select" options={this.props.selectValues} onChange={this.selectChange.bind(this)} /> }
-          { this.props.pinRequired && <input type="password" placeholder="Enter your PIN here" onChange={this.pinChange.bind(this)}/> }
+          { this.props.pinRequired &&
+              <input type="password" placeholder="Enter your PIN here" onChange={this.pinChange.bind(this)}
+                onKeyDown={(event: React.KeyboardEvent) => {
+                  if (event.key === 'Enter') this.props.acceptCallback(this.state.pin);
+                }}
+              />
+          }
           <div className="buttons">
             { this.props.acceptText && <button className="accept"
               disabled={this.props.selectValues && !this.state.selectValue}

@@ -1,7 +1,7 @@
 {
   "id": "interpretation-plugin",
   "name": "Interpretation Plugin",
-  "description": "Get the translation of the room by a professional interpreter.",
+  "description": "Plugin for obtaining the translation of a room by a professional interpreter.",
   "version": "",
   "srcURL": "index.js",
   "allowUnload": true,

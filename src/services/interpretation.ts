@@ -82,13 +82,8 @@ export class InterpretationService {
 
   private startInterpretation(language: OptionType) {
     this.currentLanguage = language;
-    if (this.config.isInterpreter) {
-      (window as any).PEX.dispatchAction({type: '[Conference] Mute Microphone'});
-    } else {
-      this.setMainRoomVolume(this.config.listenerVolume);
-    }
     this.statusPanelService.show(language.label, this.subRoomService.isConnected());
-    this.subRoomService.connect(language.value, this.onSubRoomConnect.bind(this), this.onSubRoomDisconnect.bind(this));
+    this.subRoomService.connect(language.value, this.onConnect.bind(this), this.onDisconnect.bind(this));
     this.updateIconState();
   }
 
@@ -117,15 +112,29 @@ export class InterpretationService {
     this.state$.next(state);
   }
 
-  private onSubRoomConnect() {
+  private onConnect() {
     this.statusPanelService.show(this.currentLanguage.label, this.subRoomService.isConnected());
+    if (this.config.isInterpreter) {
+      (window as any).PEX.dispatchAction({type: '[Conference] Mute Microphone'});
+      const muteAudioButton = document.getElementById('toolbar-audio-off-button').parentElement;
+      if (muteAudioButton) {
+        muteAudioButton.setAttribute('disabled', 'true');
+        muteAudioButton.style.color = '#666';
+      }
+  
+    } else {
+      this.setMainRoomVolume(this.config.listenerVolume);
+    }
   }
 
-  private onSubRoomDisconnect() {
+  private onDisconnect() {
     this.statusPanelService.hide();
     this.updateIconState();
     if (this.config.isInterpreter) {
-      (window as any).PEX.dispatchAction({type: '[Conference] Unmute Microphone'});
+      // Only try to mute if we are on a call
+      if ((window as any).PEX.pexrtc) {
+        (window as any).PEX.dispatchAction({type: '[Conference] Unmute Microphone'});
+      }
     } else {
       this.setMainRoomVolume(1);
     }

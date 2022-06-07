@@ -27,7 +27,7 @@ module.exports = {
     server: {
       type: 'https'
     },
-    //open: true,
+    open: true,
     devMiddleware: {
       publicPath: '/webapp2/custom_configuration/plugins/interpretation'
     },
