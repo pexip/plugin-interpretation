@@ -1,0 +1,37 @@
+#plugin-interpretation-status-panel {
+  .StatusPanel {
+    position: absolute;
+    top: 0;
+    background: white;
+    margin: 1em;
+    padding: 0.6em;
+    font-size: 15px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    .loading-spinner {
+      display: inline;
+      width: 16px;
+      height: 16px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #4A90E2;
+      border-radius: 50%;
+      animation: plugin-interpretation-spinner 1.5s linear infinite;
+      margin-right: 0.5em;
+    }
+    .icon {
+      width: 24px;
+      height: 24px;
+      margin-right: 0.5em;
+    }
+  }
+}
+
+@keyframes plugin-interpretation-spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "id": "interpretation-plugin",
+  "name": "Interpretation Plugin",
+  "description": "Get the translation of the room by a professional interpreter.",
+  "version": "",
+  "srcURL": "index.js",
+  "allowUnload": true,
+  "platforms": ["web", "electron", "ios", "android"],
+  "participantRoles": ["chair", "guest"],
+  "menuItems": {
+    "toolbar": [{
+      "action": "toggleInterpretation"
+    }]
+  },
+  "configuration": {
+    "isInterpreter": null,
+    "listenerVolume": 0.1,
+    "startAudioMuted": true,
+    "startVideoMuted": true,
+    "languages": [
+      ["0359", "Bulgarian"],
+      ["0420", "Czech"],
+      ["0045", "Danish"],
+      ["0031", "Dutch"],
+      ["0044", "English"],
+      ["0372", "Estonian"],
+      ["0358", "Finnish"],
+      ["0033", "French"],
+      ["0049", "German"],
+      ["0030", "Greek"],
+      ["0036", "Hungarian"],
+      ["0353", "Irish"],
+      ["0039", "Italian"],
+      ["0371", "Latvian"],
+      ["0370", "Lithuanian"],
+      ["0356", "Maltese"],
+      ["0048", "Polish"],
+      ["0351", "Portuguese"],
+      ["0040", "Romanian"],
+      ["0421", "Slovak"],
+      ["0386", "Slovene"],
+      ["0034", "Spanish"],
+      ["0046", "Swedish"],
+      ["0802", "Afar"],
+      ["0803", "Akan"],
+      ["0355", "Albanian"],
+      ["0971", "Arabic"],
+      ["0385", "Croatian"],
+      ["0995", "Georgian"],
+      ["0801", "Inupiaq"],
+      ["0389", "Macedonian"],
+      ["0047", "Norwegian"],
+      ["0007", "Russian"],
+      ["0381", "Serbian"],
+      ["0066", "Thai"],
+      ["0090", "Turkish"],
+      ["0380", "Ukrainian"]
+    ]
+  }
+}

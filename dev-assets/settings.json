@@ -1,0 +1,9 @@
+{
+  "plugins": [
+    {
+      "id": "interpretation-plugin",
+      "srcURL": "plugins/interpretation/plugin.json",
+      "enabled": true
+    }
+  ]
+}
