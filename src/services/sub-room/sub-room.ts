@@ -1,3 +1,4 @@
+import { OptionType } from "../../typings";
 import { DialogService } from "../dialog/dialog";
 
 export class SubRoomService {
@@ -7,6 +8,7 @@ export class SubRoomService {
   private pexRtcMainRoom: any;
   private pexRtcSubRoom: any;
 
+  private currentLanguage: OptionType;
   private connectCallback: Function;
   private disconnectCallback: Function;
 
@@ -17,19 +19,20 @@ export class SubRoomService {
     this.pexRtcMainRoom = (window as any).PEX.pexrtc;
   }
 
-  connect(languageCode: string, connectCallback: Function, disconnectCallback: Function) {
+  connect(language: OptionType, connectCallback: Function, disconnectCallback: Function) {
+    this.currentLanguage = language;
     this.connectCallback = connectCallback;
     this.disconnectCallback = disconnectCallback;
     //@ts-ignore
     this.pexRtcSubRoom = new PexRTC();
     this.pexRtcSubRoom.onSetup = this.onSetup.bind(this);
     this.pexRtcSubRoom.onConnect = this.onConnect.bind(this);
-    this.pexRtcSubRoom.onError = this.onError.bind(this);
+    this.pexRtcSubRoom.onError = this.onDisconnect.bind(this);
     this.pexRtcSubRoom.onDisconnect = this.onDisconnect.bind(this);
     window.addEventListener('beforeunload', this.disconnect.bind(this));
     this.pexRtcSubRoom.makeCall(
       this.pexRtcMainRoom.node,
-      this.pexRtcMainRoom.conference + languageCode,
+      this.pexRtcMainRoom.conference + language.value,
       this.pexRtcMainRoom.display_name,
       undefined,
       this.isInterpreter ? "audioonly" : "recvonly"
@@ -57,12 +60,10 @@ export class SubRoomService {
       const pinRequired = true;
       this.dialogService.show({
         title: 'PIN required',
-        content: '',
         cancelText: 'Cancel',
         cancelCallback: () => this.disconnect(),
         acceptText: 'Confirm',
         acceptCallback: (pin: string) => {this.pexRtcSubRoom.connect(pin)},
-        selectValues: undefined,
         pinRequired: pinRequired
       });
     } else {
@@ -70,20 +71,23 @@ export class SubRoomService {
     }
   }
 
-  private onError(error: string) {
-    this.dialogService.show({
-      title: 'Error found',
-      content: `An error was detected: ${error}`,
-      cancelText: 'Close'
-    });
-  }
-
   private onDisconnect(reason: string) {
-    this.dialogService.show({
-      title: 'Error found',
-      content: `An error was detected: ${reason}`,
-      cancelText: 'Close'
-    });
+    switch(reason) {
+      case "All conference hosts departed hosted conference":
+        this.dialogService.show({
+          title: 'Interpretation finished',
+          content: `The interpretation for ${this.currentLanguage.label} finished.`,
+          cancelText: 'Close'
+        });
+        break;
+      default:
+        this.dialogService.show({
+          title: 'Error detected',
+          content: reason,
+          cancelText: 'Close'
+        });
+        break;
+    }
     this.disconnectCallback();
   }
 

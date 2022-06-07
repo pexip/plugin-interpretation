@@ -6,7 +6,7 @@ import { OptionType } from '../../typings';
 
 interface DialogOptions {
   title: string,
-  content: string;
+  content?: string;
   cancelText?: string;
   cancelCallback?: Function;
   acceptText?: string;
