@@ -49,6 +49,6 @@ export class DialogService {
     // After selecting an sub-room the PIN dialog is displayed if needed. This causes a weird behavior. A dialog disappear for an instances an another appears.
     // With this delay the dialog seams to change.
     const root = this.root;
-    setTimeout( () => root.unmount(), 100);
+    setTimeout( () => root?.unmount(), 100);
   }
 }

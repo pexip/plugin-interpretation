@@ -40,8 +40,10 @@ export class SubRoomService {
   }
 
   disconnect() {
-    this.pexRtcSubRoom.disconnect();
-    this.disconnectCallback();
+    if (this.isConnected()) {
+      this.pexRtcSubRoom.disconnect();
+      this.disconnectCallback();
+    }
   }
 
   isConnected() {

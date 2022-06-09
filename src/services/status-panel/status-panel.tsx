@@ -29,7 +29,7 @@ export class StatusPanelService {
   }
 
   hide() {
-    this.root.unmount();
+    this.root?.unmount();
   }
 
 }
