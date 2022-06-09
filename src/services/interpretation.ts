@@ -13,7 +13,6 @@ export class InterpretationService {
   private dialogService: DialogService;
   private statusPanelService: StatusPanelService;
   private currentLanguage: OptionType;
-  private previousMuted: boolean;
 
   constructor(
     private config: Config,
@@ -83,15 +82,8 @@ export class InterpretationService {
 
   private startInterpretation(language: OptionType) {
     this.currentLanguage = language;
-    if (this.config.isInterpreter) {
-      this.previousMuted = (window as any).PEX.pexrtc.mutedAudio;
-      (window as any).PEX.dispatchAction({type: '[Conference] Mute Microphone'});
-    } else {
-      this.setMainRoomVolume(this.config.listenerVolume);
-    }
     this.statusPanelService.show(language.label, this.subRoomService.isConnected());
     this.subRoomService.connect(language, this.onConnect.bind(this), this.onDisconnect.bind(this));
-    this.updateIconState();
   }
 
   private setMainRoomVolume(value: number) {
@@ -100,7 +92,6 @@ export class InterpretationService {
     video.volume = value;
     audioBar.style.width = value * 100 + '%';
   }
-
 
   private updateIconState() {
     let state;
@@ -122,33 +113,17 @@ export class InterpretationService {
   private onConnect() {
     this.statusPanelService.show(this.currentLanguage.label, this.subRoomService.isConnected());
     if (this.config.isInterpreter) {
-      let muteAudioButton = document.getElementById('toolbar-audio-off-button')?.parentElement;
-      if (muteAudioButton) {
-        muteAudioButton.setAttribute('disabled', 'true');
-        muteAudioButton.style.cursor = 'inherit';
-        muteAudioButton.style.color = '#666';
-      }
+      (window as any).PEX.dispatchAction({type: '[Conference] Mute Microphone'});
     } else {
       this.setMainRoomVolume(this.config.listenerVolume);
     }
+    this.updateIconState();
   }
 
   private onDisconnect() {
     this.statusPanelService.hide();
     this.updateIconState();
-    if (this.config.isInterpreter) {
-      // Only try to unmute if we are on a call
-      if ((window as any).PEX.pexrtc) {
-        let muteAudioButton = document.getElementById('toolbar-audio-off-button')?.parentElement;
-        if (muteAudioButton) {
-          muteAudioButton.removeAttribute('disabled');
-          muteAudioButton.removeAttribute('style');
-        }
-        if (!this.previousMuted) {
-          (window as any).PEX.dispatchAction({type: '[Conference] Unmute Microphone'});
-        }
-      }
-    } else {
+    if (!this.config.isInterpreter) {
       this.setMainRoomVolume(1);
     }
   }
