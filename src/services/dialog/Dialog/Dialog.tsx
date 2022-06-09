@@ -53,7 +53,7 @@ export class Dialog extends Component<IProps> {
           }
           <div className="buttons">
             { this.props.acceptText && <button className="accept"
-              disabled={this.props.selectValues && !this.state.selectValue}
+              disabled={(this.props.selectValues && !this.state.selectValue) || (this.props.pinRequired && !this.state.pin)}
               onClick={() => {
                 this.props.acceptCallback(this.state.selectValue ? this.state.selectValue : this.state.pin);
               }}>{this.props.acceptText}</button> } 
