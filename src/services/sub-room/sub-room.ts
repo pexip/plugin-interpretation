@@ -12,6 +12,8 @@ export class SubRoomService {
   private connectCallback: Function;
   private disconnectCallback: Function;
 
+  private reuseListenerPin: boolean;
+
   constructor(
     private isInterpreter: boolean,
     private dialogService: DialogService
@@ -19,10 +21,11 @@ export class SubRoomService {
     this.pexRtcMainRoom = (window as any).PEX.pexrtc;
   }
 
-  connect(language: OptionType, connectCallback: Function, disconnectCallback: Function) {
+  connect(language: OptionType, connectCallback: Function, disconnectCallback: Function, reuseListenerPin: boolean = false) {
     this.currentLanguage = language;
     this.connectCallback = connectCallback;
     this.disconnectCallback = disconnectCallback;
+    this.reuseListenerPin = reuseListenerPin
     //@ts-ignore
     this.pexRtcSubRoom = new PexRTC();
     this.pexRtcSubRoom.onSetup = this.onSetup.bind(this);
@@ -58,6 +61,10 @@ export class SubRoomService {
   }
 
   private onSetup(localStream: MediaStream, pinStatus: string, conferenceExtension: string) {
+    if (pinStatus == 'required' && !this.isInterpreter && this.reuseListenerPin) {
+      this.pexRtcSubRoom.connect(this.pexRtcMainRoom.pin);
+      return;
+    }
     if (pinStatus == 'required' || (pinStatus == 'optional' && this.isInterpreter)) {
       const pinRequired = true;
       this.dialogService.show({

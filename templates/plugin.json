@@ -17,6 +17,7 @@
     "listenerVolume": 0.1,
     "startAudioMuted": true,
     "startVideoMuted": true,
+    "reuseListenerPin": true,
     "languages": [
       ["0359", "Bulgarian"],
       ["0420", "Czech"],

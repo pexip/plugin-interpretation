@@ -3,5 +3,6 @@ export interface Config {
   listenerVolume: number;
   startAudioMuted: boolean;
   startVideoMuted: boolean;
+  reuseListenerPin: boolean;
   languages: Array<[string, string]>;
 }

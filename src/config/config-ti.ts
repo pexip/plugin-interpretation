@@ -9,6 +9,7 @@ export const Config = t.iface([], {
   "listenerVolume": "number",
   "startAudioMuted": "boolean",
   "startVideoMuted": "boolean",
+  "reuseListenerPin": "boolean",
   "languages": t.array(t.tuple("string", "string")),
 });
 

@@ -56,13 +56,14 @@ The main files are these two:
 
 This plugin allow to configure its behavior. It can be done by modifying the file `plugin.json`:
 
-| Parameter       | Type                    | Description |
-|-----------------|-------------------------| ------------|
-| isInterpreter   | boolean                 | Indicates the role of the | 
-| listenerVolume  | number                  | Volume for the listener for the main room when he is connected to a interpretation room. The value should be between 0 and 1. |
-| languages       | Array<[string, string]> | Array in with element has a pair of value. The first value is the language code for creating the sub-room and the other the label. For example, an **element** of this array could be `["001", "English"]`. The first is used for creating the sub-room. If the main room is `"123"` the sub-room will be `"123001"`. The second value is used in the interface for referring to that language.|
-| startAudioMuted | boolean                 | If true, the client will join to the main room with his audio muted. |
-| startVideoMuted | boolean                 | If true, the client will join to the main room with his video muted. |
+| Parameter        | Type                    | Description |
+|------------------|-------------------------| ------------|
+| isInterpreter    | boolean                 | Indicates the role of the | 
+| listenerVolume   | number                  | Volume for the listener for the main room when he is connected to a interpretation room. The value should be between 0 and 1. |
+| languages        | Array<[string, string]> | Array in with element has a pair of value. The first value is the language code for creating the sub-room and the other the label. For example, an **element** of this array could be `["001", "English"]`. The first is used for creating the sub-room. If the main room is `"123"` the sub-room will be `"123001"`. The second value is used in the interface for referring to that language.|
+| startAudioMuted  | boolean                 | If true, the client will join to the main room with his audio muted. |
+| startVideoMuted  | boolean                 | If true, the client will join to the main room with his video muted. |
+| reuseListenerPin | boolean                 | It's a feature for the listener, not the interpreter. If true, instead or displaying the PIN dialog when a PIN is required, it will try to reuse the main room PIN in the language room.
 
 ## Testing in local
 

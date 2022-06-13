@@ -1,7 +1,7 @@
 {
   "name": "plugin-interpretation",
   "author": "Marcos Cereijo",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Plugin for obtaining the translation of a room by a professional interpreter.",
   "scripts": {
     "start-interpreter": "NODE_ENV=interpreter webpack-dev-server --mode=development",

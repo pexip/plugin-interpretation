@@ -65,8 +65,6 @@ export class InterpretationService {
     this.dialogService.show({
       title: `${action} interpretation`,
       content: `Do you want to ${action.toLowerCase()} the interpretation? ${ !this.subRoomService.isConnected() ? 'Please, select a language:' : ''}`,
-      cancelText: undefined,
-      cancelCallback: undefined,
       acceptText: acceptText,
       acceptCallback: acceptCallback,
       selectValues: selectValues
@@ -83,7 +81,7 @@ export class InterpretationService {
   private startInterpretation(language: OptionType) {
     this.currentLanguage = language;
     this.statusPanelService.show(language.label, this.subRoomService.isConnected());
-    this.subRoomService.connect(language, this.onConnect.bind(this), this.onDisconnect.bind(this));
+    this.subRoomService.connect(language, this.onConnect.bind(this), this.onDisconnect.bind(this), this.config.reuseListenerPin);
   }
 
   private setMainRoomVolume(value: number) {
