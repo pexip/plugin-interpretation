@@ -18,6 +18,7 @@
     "startAudioMuted": true,
     "startVideoMuted": true,
     "reuseListenerPin": true,
+    "showInterpreterIconInRosterList": true,
     "languages": [
       ["0359", "Bulgarian"],
       ["0420", "Czech"],

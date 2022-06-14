@@ -10,6 +10,7 @@ export const Config = t.iface([], {
   "startAudioMuted": "boolean",
   "startVideoMuted": "boolean",
   "reuseListenerPin": "boolean",
+  "showInterpreterIconInRosterList" :"boolean",
   "languages": t.array(t.tuple("string", "string")),
 });
 

@@ -1,6 +1,8 @@
 import { InterpretationService } from './services/interpretation';
+import { InterpreterIndicatorService } from './services/roster-list/role-indicator/interpreter-indicator';
 
 let interpretationService: InterpretationService;
+let interpreterIndicatorService : InterpreterIndicatorService;
 
 const state$ = (window as any).PEX.pluginAPI.createNewState({});
 
@@ -23,6 +25,9 @@ const load = async () => {
     }
     if (configuration.startVideoMuted) {
       (window as any).PEX.dispatchAction({type: '[Conference] Mute Camera'});
+    }
+    if (configuration.showInterpreterIconInRosterList) {
+      interpreterIndicatorService = new InterpreterIndicatorService(configuration.isInterpreter);
     }
     interpretationService = new InterpretationService(configuration, state$);
   });
