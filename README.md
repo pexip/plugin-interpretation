@@ -64,6 +64,7 @@ This plugin allow to configure its behavior. It can be done by modifying the fil
 | startAudioMuted  | boolean                 | If true, the client will join to the main room with his audio muted. |
 | startVideoMuted  | boolean                 | If true, the client will join to the main room with his video muted. |
 | reuseListenerPin | boolean                 | It's a feature for the listener, not the interpreter. If true, instead or displaying the PIN dialog when a PIN is required, it will try to reuse the main room PIN in the language room.
+| showRoleIndicator | boolean                | If true, it shows the role (interpreter or listener) in the roster list.
 
 ## Testing in local
 

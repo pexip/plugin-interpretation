@@ -1,43 +1,56 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
-import { InterpreterIndicator } from './InterpreterIndicator/InterpreterIndicator';
+import { RoleIndicator } from './RoleIndicator/RoleIndicator';
+
+enum Role {
+  INTERPRETER,
+  LISTENER,
+  NONE
+}
 
 interface ParticipantStatus {
   uuid: string;
   startTime: number;
   displayName: string;
-  isInterpreter: boolean;
+  role: Role;
 }
 
-export class InterpreterIndicatorService {
-
-  private readonly interpreterCharacter = '\u2002'; // En Space
+export class RoleIndicatorService {
 
   private participants: ParticipantStatus[] = [];
+  private queryParams: URLSearchParams;
 
-  constructor(isInterpreter: boolean) {
-    console.error(this.participants);
-    const pexrtc = (window as any).PEX.pexrtc;
-    const displayName = pexrtc.display_name;
+  constructor(queryParams: URLSearchParams) {
+    this.queryParams = queryParams;
+  }
+
+  setRole(isInterpreter: boolean) {
     if (isInterpreter) {
-      pexrtc.setParticipantText(pexrtc.uuid, displayName + this.interpreterCharacter );
+      this.setCallTag('interpreter');
+    } else {
+      this.setCallTag('listener');
     }
+  }
+
+  cleanRole() {
+    if (this.queryParams.get('callTag')) {
+      this.queryParams.delete('callTag');
+      window.location.search = this.queryParams.toString();
+    }
+  }
+
+  init() {
+    const pexrtc = (window as any).PEX.pexrtc;
     const originalOnParticipantCreate = pexrtc.onParticipantCreate;
     const originalOnParticipantUpdate = pexrtc.onParticipantUpdate;
     const originalOnParticipantDelete = pexrtc.onParticipantDelete;
     pexrtc.onParticipantCreate = (participant: any) => {
-      console.error(participant);
       originalOnParticipantCreate(participant);
-      console.error('onParticipantCreate ' + participant.display_name);
       this.onParticipantUpdate(participant);
-      
     };
     pexrtc.onParticipantUpdate = (participant: any) => {
-      console.error(participant);
-      console.error('onParticipantUpdate ' + participant.display_name);
       originalOnParticipantUpdate(participant);
       this.onParticipantUpdate(participant);
-     
     };
     pexrtc.onParticipantDelete = (payload: any) => {
       originalOnParticipantDelete(payload);
@@ -45,28 +58,38 @@ export class InterpreterIndicatorService {
     };
   }
 
+  private setCallTag(value: string) {
+    if (this.queryParams.get('callTag') != value) {
+      this.queryParams.set('callTag', value);
+      window.location.search = this.queryParams.toString();
+    }
+  }
+
   private onParticipantUpdate(participant: any) {
  
-    const isInterpreter = participant.overlay_text.match(new RegExp(this.interpreterCharacter));
+    let role = Role.NONE;
 
-    let index = this.participants.findIndex( (part) => part.uuid === participant.uuid);
+    if (participant.call_tag === 'interpreter') {
+      role = Role.INTERPRETER;
+    } else if (participant.call_tag === 'listener') {
+      role = Role.LISTENER;
+    }
 
-    if (index < 0) {
+    const found = this.participants.find( (part) => part.uuid === participant.uuid);
+
+    if (!found) {
       const participantStatus: ParticipantStatus = {
         uuid: participant.uuid,
         startTime: participant.start_time,
         displayName: participant.display_name,
-        isInterpreter: isInterpreter
+        role: role
       }
       this.participants.push(participantStatus);
-      console.log(this.participants.length);
-      index = this.participants.length - 1;
     }
     this.participants.sort( (a, b) =>  a.startTime - b.startTime);
-    console.error(this.participants);
     this.participants.forEach( (participant) => {
-      if (participant.isInterpreter) {
-        this.setInterpreterIndicator(participant.uuid);
+      if (participant.role != Role.NONE) {
+        this.setRoleIndicator(participant.uuid, role);
       }
     });
   };
@@ -78,7 +101,7 @@ export class InterpreterIndicatorService {
     }
   }
 
-  private setInterpreterIndicator(uuid: string) {
+  private setRoleIndicator(uuid: string, role: Role) {
 
     const index = this.participants.findIndex( (participant) => participant.uuid === uuid );
 
@@ -92,7 +115,8 @@ export class InterpreterIndicatorService {
         indicatorContainer.className = 'plugin-interpretation-interpreter-indicator';
         indicators.appendChild(indicatorContainer);
         const root = ReactDOM.createRoot(indicatorContainer);
-        root.render(<InterpreterIndicator />);
+        const isInterpreter = role === Role.INTERPRETER
+        root.render(<RoleIndicator isInterpreter={isInterpreter}/>);
       }
     }
     

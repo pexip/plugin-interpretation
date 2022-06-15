@@ -1,10 +1,12 @@
 import { InterpretationService } from './services/interpretation';
-import { InterpreterIndicatorService } from './services/roster-list/role-indicator/interpreter-indicator';
+import { RoleIndicatorService } from './services/roster-list/role-indicator/role-indicator';
 
 let interpretationService: InterpretationService;
-let interpreterIndicatorService : InterpreterIndicatorService;
+let roleIndicatorService : RoleIndicatorService;
 
 const state$ = (window as any).PEX.pluginAPI.createNewState({});
+
+const queryParams = new URLSearchParams(window.location.search);
 
 const load = async () => {
   let response: Response;
@@ -17,17 +19,31 @@ const load = async () => {
   if (response.status != 200) {
     throw Error(`Cannot retrieve file "${filePath}"`);
   } 
+
   const json = await response.json();
+ 
+  const configuration = json.configuration;
+
+  if (configuration.showRoleIndicator) {
+    roleIndicatorService = new RoleIndicatorService(queryParams);
+    // Check if moderator by checking if we have a button
+    const isModerator = !json.menuItems.toolbar;
+    if (isModerator) {
+      roleIndicatorService.cleanRole();
+    } else {
+      roleIndicatorService.setRole(configuration.isInterpreter);
+    }
+  }
+
   (window as any).PEX.actions$.ofType('[Conference] Connect Success').subscribe( (action: any) => {
-    const configuration = json.configuration;
     if (configuration.startAudioMuted) {
       (window as any).PEX.dispatchAction({type: '[Conference] Mute Microphone'});
     }
     if (configuration.startVideoMuted) {
       (window as any).PEX.dispatchAction({type: '[Conference] Mute Camera'});
     }
-    if (configuration.showInterpreterIconInRosterList) {
-      interpreterIndicatorService = new InterpreterIndicatorService(configuration.isInterpreter);
+    if (configuration.showRoleIndicator) {
+      roleIndicatorService.init();
     }
     interpretationService = new InterpretationService(configuration, state$);
   });

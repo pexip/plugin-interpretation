@@ -4,6 +4,6 @@ export interface Config {
   startAudioMuted: boolean;
   startVideoMuted: boolean;
   reuseListenerPin: boolean;
-  showInterpreterIconInRosterList: boolean;
+  showRoleIndicator: boolean;
   languages: Array<[string, string]>;
 }
