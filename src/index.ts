@@ -27,7 +27,8 @@ const load = async () => {
   if (configuration.showRoleIndicator) {
     roleIndicatorService = new RoleIndicatorService(queryParams);
     // Check if moderator by checking if we have a button
-    const isModerator = !json.menuItems.toolbar;
+    // The moderator shouldn't have an extra role icon
+    const isModerator = !json.menuItems?.toolbar;
     if (isModerator) {
       roleIndicatorService.cleanRole();
     } else {

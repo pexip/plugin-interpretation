@@ -28,7 +28,7 @@ export class RoleIndicatorService {
     if (isInterpreter) {
       this.setCallTag('interpreter');
     } else {
-      this.setCallTag('listener');
+      this.setCallTag('listener'); 
     }
   }
 
@@ -89,7 +89,7 @@ export class RoleIndicatorService {
     this.participants.sort( (a, b) =>  a.startTime - b.startTime);
     this.participants.forEach( (participant) => {
       if (participant.role != Role.NONE) {
-        this.setRoleIndicator(participant.uuid, role);
+        this.setRoleIndicator(participant.uuid, participant.role);
       }
     });
   };
