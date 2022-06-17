@@ -100,6 +100,37 @@ Now the plugin will check if this parameter exists, is valid and display an erro
 
 Don't forget to modify the template located in `templates/plugin.json`.
 
+# Local policies example
+
+An easy way to test the plugin is to use a local policy. In this case we designed a local policy for testing. It will allow every VMR with 2 or 6 digits and will use the pins 1234 for the hosts and 4321 for the guests.
+
+```python
+{
+  {% if (call_info.local_alias | pex_regex_replace('^(\d{2}|\d{6})$',  '') == '')  %}
+    "action": "continue",
+    "result": {
+        "service_type": "conference",
+        "name": "{{call_info.local_alias}}",
+        "service_tag": "pexip-interpreter",
+        "description": "",
+        "call_tag": "",
+        "pin": "1234",
+        "guest_pin": "4321",
+        "guests_can_present": true,
+        "allow_guests": true,
+        "view": "four_mains_zero_pips",
+        "ivr_theme_name": "visitor_normal",
+        "locked": false,
+        "automatic_participants": []
+     }
+  {% else %}
+    "action": "reject",
+    "result": {}
+  {% endif %}
+}
+
+```
+
 ## FAQ
 
 - You receive the following error message when trying to connect to a interpretation when using the listener role: `Remote description failed DOMException: Failed to parse SessionDescription. m=video 0 UDP/TLS/RTP/SAVPF  Invalid value: .`

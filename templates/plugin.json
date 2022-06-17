@@ -18,7 +18,8 @@
     "startAudioMuted": true,
     "startVideoMuted": true,
     "reuseListenerPin": true,
-    "showRoleIndicator": true,
+    "roleIndicator": true,
+    "subRoomMonitor": true,
     "languages": [
       ["0359", "Bulgarian"],
       ["0420", "Czech"],

@@ -4,6 +4,7 @@ export interface Config {
   startAudioMuted: boolean;
   startVideoMuted: boolean;
   reuseListenerPin: boolean;
-  showRoleIndicator: boolean;
+  roleIndicator: boolean;
+  subRoomMonitor: boolean;
   languages: Array<[string, string]>;
 }

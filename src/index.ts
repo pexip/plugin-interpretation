@@ -1,8 +1,10 @@
 import { InterpretationService } from './services/interpretation';
+import { MonitorService } from './services/monitor/monitor';
 import { RoleIndicatorService } from './services/roster-list/role-indicator/role-indicator';
 
 let interpretationService: InterpretationService;
 let roleIndicatorService : RoleIndicatorService;
+let monitorService: MonitorService;
 
 const state$ = (window as any).PEX.pluginAPI.createNewState({});
 
@@ -24,16 +26,21 @@ const load = async () => {
  
   const configuration = json.configuration;
 
-  if (configuration.showRoleIndicator) {
+     // The moderator shouldn't have an extra role icon
+  const isModerator = !json.menuItems?.toolbar;
+
+  if (configuration.roleIndicator) {
     roleIndicatorService = new RoleIndicatorService(queryParams);
-    // Check if moderator by checking if we have a button
-    // The moderator shouldn't have an extra role icon
-    const isModerator = !json.menuItems?.toolbar;
+    // The moderator doesn't notify his role
     if (isModerator) {
       roleIndicatorService.cleanRole();
     } else {
       roleIndicatorService.setRole(configuration.isInterpreter);
     }
+  }
+
+  if (configuration.subRoomMonitor) {
+    monitorService = new MonitorService(configuration.languages);
   }
 
   (window as any).PEX.actions$.ofType('[Conference] Connect Success').subscribe( (action: any) => {
@@ -45,6 +52,9 @@ const load = async () => {
     }
     if (configuration.showRoleIndicator) {
       roleIndicatorService.init();
+    }
+    if (configuration.subRoomMonitor) {
+      monitorService.connect();
     }
     interpretationService = new InterpretationService(configuration, state$);
   });
