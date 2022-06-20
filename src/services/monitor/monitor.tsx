@@ -1,4 +1,9 @@
-interface InfoSubRoom {
+import * as React from 'react';
+import * as ReactDOM from 'react-dom/client';
+
+import { Monitor } from "./Monitor/Monitor";
+
+export interface InfoSubRoom {
   language: [string, string];
   participants: any[];
 }
@@ -11,6 +16,8 @@ export class MonitorService {
   private readonly timeoutScanning = 1000;
   private readonly timeBetweenScanning = 15000;
 
+  private root: ReactDOM.Root;
+
   constructor(private languages: Array<[string, string]>) {}
 
   connect() {
@@ -22,7 +29,8 @@ export class MonitorService {
       }
     });
     (window as any).infoSubRooms = this.infoSubRooms;
-    this.scanning(0);
+    //this.scanning(0);
+    this.setMonitorPanel();
   }
 
   disconnect() {
@@ -34,7 +42,6 @@ export class MonitorService {
       this.checkSubRoom(this.infoSubRooms[languageIndex]);
       if (languageIndex < this.infoSubRooms.length - 1) {
         this.scanning(++languageIndex);
-        console.log(this.infoSubRooms);
       } else {
         const nextScanningTimeout = this.timeBetweenScanning  - this.infoSubRooms.length * this.timeoutScanning
         this.timeout = setTimeout( () => this.scanning(0), nextScanningTimeout);
@@ -47,6 +54,7 @@ export class MonitorService {
     // @ts-ignore
     const pexrtc = new PexRTC();
     const disconnect = () => pexrtc.disconnect();
+    pexrtc.onError = () => {};
     pexrtc.onConnect = () => {
       window.addEventListener('beforeunload', disconnect);
     };
@@ -78,6 +86,7 @@ export class MonitorService {
       // All the users retrieved
       window.removeEventListener('beforeunload', disconnect);
       pexrtc.disconnect();
+      this.setMonitorPanel();
     };
     pexrtc.makeCall(
       pexRtcMainRoom.node,
@@ -88,23 +97,17 @@ export class MonitorService {
     );
   }
 
-  // private setMonitorPanel() {
-
-  //   const sidebarContainer = document.getElementsByClassName('pex-sidebar-container');
-
-  //   if (sidebarContainer) {
-  //     const indicators = userContainer.querySelector('ul');
-  //     let indicatorContainer = indicators.querySelector('.plugin-interpretation-interpreter-indicator');
-  //     if (!indicatorContainer) {
-  //       indicatorContainer = document.createElement('li');
-  //       indicatorContainer.className = 'plugin-interpretation-interpreter-indicator';
-  //       indicators.appendChild(indicatorContainer);
-  //       const root = ReactDOM.createRoot(indicatorContainer);
-  //       const isInterpreter = role === Role.INTERPRETER
-  //       root.render(<RoleIndicator isInterpreter={isInterpreter}/>);
-  //     }
-  //   }
-    
-  // }
+  private setMonitorPanel() {
+    if (!this.root) {
+      const sidebarContainer = document.getElementById('pex-sidebar-container');
+      if (sidebarContainer) {
+        const monitorPanel = document.createElement('div');
+        monitorPanel.id = 'plugin-interpretation-monitor';
+        sidebarContainer.appendChild(monitorPanel);
+        this.root = ReactDOM.createRoot(monitorPanel);
+      }
+    }
+    if (this.root) this.root.render(<Monitor infoSubRooms={this.infoSubRooms}/>);
+  }
 
 }

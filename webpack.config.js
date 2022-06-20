@@ -22,6 +22,10 @@ pluginJson.configuration.isInterpreter = isInterpreter;
 
 module.exports = {
   devServer: {
+    headers: {
+      'content-type': '',
+      'Content-Type': '',
+    },
     port: port,
     compress: false, // needed for SSE support
     server: {
@@ -60,6 +64,15 @@ module.exports = {
           "css-loader",
           // Compiles Sass to CSS
           "sass-loader",
+        ],
+      },
+      {
+        test: /\.css$/i,
+        use: [
+          // Creates `style` nodes from JS strings
+          "style-loader",
+          // Translates CSS into CommonJS
+          "css-loader",
         ],
       },
     ],
