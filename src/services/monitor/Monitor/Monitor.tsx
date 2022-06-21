@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Component } from "react";
-import { Table } from "react-bootstrap";
+import { BehaviorSubject, Subscription } from "rxjs";
 
 import { InfoSubRoom } from "../monitor";
 
@@ -14,16 +14,23 @@ interface Participant {
 
 interface IState {
   showPanel: boolean;
+  loadingPercentage: number;
 }
 
 interface IProps {
-  infoSubRooms: InfoSubRoom[]
+  infoSubRooms: InfoSubRoom[];
+  loadingPercentage$: BehaviorSubject<number>;
+  onOpen: Function;
+  onClose: Function;
 }
 
 export class Monitor extends Component<IProps> {
 
+  private loadingPercentageSubscription: Subscription;
+
   state: IState = {
-    showPanel: false
+    showPanel: false,
+    loadingPercentage: 0
   }
   
   render() {
@@ -39,6 +46,15 @@ export class Monitor extends Component<IProps> {
     });
     const participantsRows = participants.map( (participant) => (
       <tr>
+        <td>
+            <svg>
+              <use href={
+                  participant.isInterpreter
+                  ? 'custom_configuration/plugins/interpretation/assets/images/interpreter.svg#off'
+                  : 'custom_configuration/plugins/interpretation/assets/images/listener.svg#off'
+                } />
+            </svg>
+        </td>
         <td>{participant.displayName}</td>
         <td>{participant.language}</td>
       </tr>
@@ -49,25 +65,20 @@ export class Monitor extends Component<IProps> {
           <svg>
             <use href='icons.svg#chevron-right'/>
           </svg>
-          Language rooms
+          Interpretation users
         </button>
         { this.state.showPanel &&
             <div className="content">
+              <div className="loading" style={{width: (this.state.loadingPercentage + '%')}}></div>
               { participants.length 
                 ?
-                  <Table striped bordered>
-                    <thead>
-                      <tr>
-                        <th>Participants</th>
-                        <th>Language</th>
-                      </tr>
-                    </thead>
+                  <table>
                     <tbody>
                       { participantsRows }
                     </tbody>
-                  </Table>
+                  </table>
                 :
-                  <div className="no-content">No users in language rooms</div>
+                  <div className="no-content">No users in interpretation rooms</div>
               }
             </div>
         }
@@ -75,9 +86,24 @@ export class Monitor extends Component<IProps> {
     );
   }
 
+  componentDidMount(): void {
+    this.loadingPercentageSubscription = this.props.loadingPercentage$.subscribe( (percentage) => {
+      this.state.loadingPercentage = percentage;
+      this.setState(this.state);
+    });
+  }
+
+  componentWillUnmount(): void {
+    this.loadingPercentageSubscription.unsubscribe();
+  }
+
   private togglePanel() {
     this.state.showPanel = !this.state.showPanel;
     this.setState(this.state);
+    if (this.state.showPanel) {
+      this.props.onOpen();
+    } else {
+      this.props.onClose();
+    }
   }
-
 }

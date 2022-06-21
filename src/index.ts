@@ -2,8 +2,6 @@ import { InterpretationService } from './services/interpretation';
 import { MonitorService } from './services/monitor/monitor';
 import { RoleIndicatorService } from './services/roster-list/role-indicator/role-indicator';
 
-//import 'bootstrap/dist/css/bootstrap.min.css';
-
 let interpretationService: InterpretationService;
 let roleIndicatorService : RoleIndicatorService;
 let monitorService: MonitorService;
@@ -59,8 +57,7 @@ const load = async () => {
   });
   if (configuration.subRoomMonitor) {
     (window as any).PEX.actions$.ofType('[Conference] Set remote call type').subscribe( (action: any) => {
-      console.error('SIDEBAR');
-      monitorService.connect();
+      monitorService.init();
     });
   }
   

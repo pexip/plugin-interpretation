@@ -1,5 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
+import { BehaviorSubject } from 'rxjs';
 
 import { Monitor } from "./Monitor/Monitor";
 
@@ -12,15 +13,15 @@ export class MonitorService {
 
   private infoSubRooms: InfoSubRoom[] = [];
 
-  private timeout: NodeJS.Timeout;
-  private readonly timeoutScanning = 1000;
-  private readonly timeBetweenScanning = 15000;
-
   private root: ReactDOM.Root;
+
+  private loadingPercentage$ = new BehaviorSubject<number>(0);
+
+  private interval: NodeJS.Timeout;
 
   constructor(private languages: Array<[string, string]>) {}
 
-  connect() {
+  init() {
     // Populate the array with all the languages and empty participants
     this.infoSubRooms = this.languages.map( (language) => {
       return {
@@ -29,72 +30,81 @@ export class MonitorService {
       }
     });
     (window as any).infoSubRooms = this.infoSubRooms;
-    //this.scanning(0);
     this.setMonitorPanel();
   }
 
-  disconnect() {
-    clearTimeout(this.timeout);
+  startScanning() {
+    this.interval = setInterval( () => {
+      this.scan();
+    }, 30000);
+    this.scan();
   }
 
-  private scanning(languageIndex: number) {
-    this.timeout = setTimeout( () => {
-      this.checkSubRoom(this.infoSubRooms[languageIndex]);
-      if (languageIndex < this.infoSubRooms.length - 1) {
-        this.scanning(++languageIndex);
-      } else {
-        const nextScanningTimeout = this.timeBetweenScanning  - this.infoSubRooms.length * this.timeoutScanning
-        this.timeout = setTimeout( () => this.scanning(0), nextScanningTimeout);
-      }
-    }, this.timeoutScanning);
+  stopScanning() {
+    clearInterval(this.interval);
+  }
+
+  private async scan(languageIndex: number = 0) {
+    if (!this.interval) return;
+    await this.checkSubRoom(this.infoSubRooms[languageIndex]);
+    if (languageIndex < this.infoSubRooms.length - 1) {
+      this.loadingPercentage$.next((languageIndex + 2) / this.languages.length * 100);
+      this.scan(++languageIndex);
+    } else {
+      this.loadingPercentage$.next(0);
+    }
   }
 
   private checkSubRoom(infoSubRoom: InfoSubRoom) {
-    const pexRtcMainRoom = (window as any).PEX.pexrtc;
-    // @ts-ignore
-    const pexrtc = new PexRTC();
-    const disconnect = () => pexrtc.disconnect();
-    pexrtc.onError = () => {};
-    pexrtc.onConnect = () => {
-      window.addEventListener('beforeunload', disconnect);
-    };
-    pexrtc.onConferenceUpdate = (properties: any) => {
-      // Conference empty
-      if (properties.started === false) {
-        window.removeEventListener('beforeunload', disconnect);
-        pexrtc.disconnect();
-      }
-    }
-    pexrtc.onSetup = (localStream: MediaStream, pinStatus: string, conferenceExtension: string) => {
-      var pin = '';
-      if (pinStatus === 'required' || pinStatus === 'optional') {
-        pin = '4321';
-      }
-      pexrtc.connect(pin);
-    }
-    pexrtc.onParticipantCreate = (participant: any) => {
-      if (participant.has_media) {
-        const index = infoSubRoom.participants.findIndex( (part) => part.uuid === participant.uuid);
-        if (index < 0) {
-          infoSubRoom.participants.push(participant);
-        } else {
-          infoSubRoom.participants[index] = participant;
+    return new Promise<void>( (resolve, reject) => {
+      const pexRtcMainRoom = (window as any).PEX.pexrtc;
+      // @ts-ignore
+      const pexrtc = new PexRTC();
+      const disconnect = () => pexrtc.disconnect();
+      pexrtc.onError = () => { reject() };
+      pexrtc.onConnect = () => {
+        window.addEventListener('beforeunload', disconnect);
+      };
+      pexrtc.onConferenceUpdate = (properties: any) => {
+        // Conference empty
+        if (properties.started === false) {
+          window.removeEventListener('beforeunload', disconnect);
+          pexrtc.disconnect();
+          resolve();
         }
       }
-    };
-    pexrtc.onParticipantUpdate = () => {
-      // All the users retrieved
-      window.removeEventListener('beforeunload', disconnect);
-      pexrtc.disconnect();
-      this.setMonitorPanel();
-    };
-    pexrtc.makeCall(
-      pexRtcMainRoom.node,
-      pexRtcMainRoom.conference + infoSubRoom.language[0],
-      pexRtcMainRoom.display_name,
-      undefined,
-      'none'
-    );
+      pexrtc.onSetup = (localStream: MediaStream, pinStatus: string, conferenceExtension: string) => {
+        var pin = '';
+        if (pinStatus === 'required' || pinStatus === 'optional') {
+          pin = '4321';
+        }
+        pexrtc.connect(pin);
+      }
+      pexrtc.onParticipantCreate = (participant: any) => {
+        if (participant.has_media) {
+          const index = infoSubRoom.participants.findIndex( (part) => part.uuid === participant.uuid);
+          if (index < 0) {
+            infoSubRoom.participants.push(participant);
+          } else {
+            infoSubRoom.participants[index] = participant;
+          }
+        }
+      };
+      pexrtc.onParticipantUpdate = () => {
+        // All the users retrieved
+        window.removeEventListener('beforeunload', disconnect);
+        pexrtc.disconnect();
+        this.setMonitorPanel();
+        resolve();
+      };
+      pexrtc.makeCall(
+        pexRtcMainRoom.node,
+        pexRtcMainRoom.conference + infoSubRoom.language[0],
+        pexRtcMainRoom.display_name,
+        undefined,
+        'none'
+      );
+    });
   }
 
   private setMonitorPanel() {
@@ -107,7 +117,9 @@ export class MonitorService {
         this.root = ReactDOM.createRoot(monitorPanel);
       }
     }
-    if (this.root) this.root.render(<Monitor infoSubRooms={this.infoSubRooms}/>);
+    if (this.root) this.root.render(
+      <Monitor infoSubRooms={this.infoSubRooms} onOpen={this.startScanning.bind(this)} onClose={this.stopScanning.bind(this)} loadingPercentage$={this.loadingPercentage$}/>
+    );
   }
 
 }
