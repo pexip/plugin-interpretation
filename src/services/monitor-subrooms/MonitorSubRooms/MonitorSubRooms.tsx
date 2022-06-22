@@ -70,7 +70,7 @@ export class MonitorSubRooms extends Component<IProps> {
         </button>
         { this.state.showPanel &&
             <div className="content">
-              <div className="loading" style={{width: (this.state.loadingPercentage + '%')}}></div>
+              <div className="loading" style={{width: (this.state.loadingPercentage + '%'), opacity: this.state.loadingPercentage ? 1 : 0}}></div>
               { participants.length 
                 ?
                   <table>
