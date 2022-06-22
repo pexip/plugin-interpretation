@@ -34,7 +34,9 @@ export class MonitorSubRooms extends Component<IProps> {
   }
   
   render() {
+    
     let participants: Participant[] = [];
+
     this.props.infoSubRooms.filter( (info) => info.participants.length).forEach( (info) => {
       return info.participants.forEach( (participant) => {
         participants.push({
@@ -44,6 +46,7 @@ export class MonitorSubRooms extends Component<IProps> {
         });
       });
     });
+
     const participantsRows = participants.map( (participant) => (
       <tr>
         <td>
@@ -60,6 +63,7 @@ export class MonitorSubRooms extends Component<IProps> {
         <td>{participant.language}</td>
       </tr>
     ));
+    
     return (
       <div className={ this.state.showPanel ? 'MonitorSubRooms selected' : 'MonitorSubRooms'}>
         <button className='header' onClick={this.togglePanel.bind(this)}>
@@ -74,9 +78,7 @@ export class MonitorSubRooms extends Component<IProps> {
               { participants.length 
                 ?
                   <table>
-                    <tbody>
-                      { participantsRows }
-                    </tbody>
+                    { participantsRows }
                   </table>
                 :
                   <div className="no-content">No users in interpretation rooms</div>

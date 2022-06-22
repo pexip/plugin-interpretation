@@ -29,7 +29,8 @@
     }
     .content {
       text-align: center;
-      height: calc(100% - 66px);
+      height: calc(100% - 46px);
+      overflow: auto;
       position: relative;
       .loading {
         background-color: #4A90E2;
