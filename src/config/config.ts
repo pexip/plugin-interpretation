@@ -5,6 +5,10 @@ export interface Config {
   startVideoMuted: boolean;
   reuseListenerPin: boolean;
   roleIndicator: boolean;
-  subRoomMonitor: boolean;
+  monitorSubRooms: {
+    enabled: boolean;
+    rescanInterval: number;
+    guestPin: string;
+  }
   languages: Array<[string, string]>;
 }

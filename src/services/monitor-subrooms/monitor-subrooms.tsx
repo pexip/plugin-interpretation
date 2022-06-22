@@ -2,14 +2,14 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import { BehaviorSubject } from 'rxjs';
 
-import { Monitor } from "./Monitor/Monitor";
+import { MonitorSubRooms } from "./MonitorSubRooms/MonitorSubRooms";
 
 export interface InfoSubRoom {
   language: [string, string];
   participants: any[];
 }
 
-export class MonitorService {
+export class MonitorSubRoomsService {
 
   private infoSubRooms: InfoSubRoom[] = [];
 
@@ -19,7 +19,11 @@ export class MonitorService {
 
   private interval: NodeJS.Timeout;
 
-  constructor(private languages: Array<[string, string]>) {}
+  constructor(
+    private languages: Array<[string, string]>,
+    private rescanInterval: number,
+    private guestPin: string
+  ) {}
 
   init() {
     // Populate the array with all the languages and empty participants
@@ -36,7 +40,7 @@ export class MonitorService {
   startScanning() {
     this.interval = setInterval( () => {
       this.scan();
-    }, 30000);
+    }, this.rescanInterval);
     this.scan();
   }
 
@@ -76,7 +80,7 @@ export class MonitorService {
       pexrtc.onSetup = (localStream: MediaStream, pinStatus: string, conferenceExtension: string) => {
         var pin = '';
         if (pinStatus === 'required' || pinStatus === 'optional') {
-          pin = '4321';
+          pin = this.guestPin;
         }
         pexrtc.connect(pin);
       }
@@ -118,7 +122,7 @@ export class MonitorService {
       }
     }
     if (this.root) this.root.render(
-      <Monitor infoSubRooms={this.infoSubRooms} onOpen={this.startScanning.bind(this)} onClose={this.stopScanning.bind(this)} loadingPercentage$={this.loadingPercentage$}/>
+      <MonitorSubRooms infoSubRooms={this.infoSubRooms} onOpen={this.startScanning.bind(this)} onClose={this.stopScanning.bind(this)} loadingPercentage$={this.loadingPercentage$}/>
     );
   }
 

@@ -5,7 +5,7 @@ This plugin helps the participants of a conference to understand what is going o
 Once this plugin is active, the users will have the following behavior:
 
 - Interpreter: Can hear the main room and speak to the language sub-room. He can't speak to the main room. When connecting to the language sub-room, the video in the main room is disabled.
-- Listener: He can only speak to the main room. He can hear the interpreter with volume=100% and also the main room with the value defined in the configuration (parameter `volumeListener`).
+- Listener: He can only speak to the main room. He can hear the interpreter with volume=100% and also the main room with the value defined in the configuration (parameter `listenerVolume`).
 
 The sub-room has the following structure `<main-room><language-code>`. It's explained with more detail in the section *Configure the plugin*.
 
@@ -56,15 +56,139 @@ The main files are these two:
 
 This plugin allow to configure its behavior. It can be done by modifying the file `plugin.json`:
 
-| Parameter        | Type                    | Description |
-|------------------|-------------------------| ------------|
-| isInterpreter    | boolean                 | Indicates the role of the | 
-| listenerVolume   | number                  | Volume for the listener for the main room when he is connected to a interpretation room. The value should be between 0 and 1. |
-| languages        | Array<[string, string]> | Array in with element has a pair of value. The first value is the language code for creating the sub-room and the other the label. For example, an **element** of this array could be `["001", "English"]`. The first is used for creating the sub-room. If the main room is `"123"` the sub-room will be `"123001"`. The second value is used in the interface for referring to that language.|
-| startAudioMuted  | boolean                 | If true, the client will join to the main room with his audio muted. |
-| startVideoMuted  | boolean                 | If true, the client will join to the main room with his video muted. |
-| reuseListenerPin | boolean                 | It's a feature for the listener, not the interpreter. If true, instead or displaying the PIN dialog when a PIN is required, it will try to reuse the main room PIN in the language room.
-| showRoleIndicator | boolean                | If true, it shows the role (interpreter or listener) in the roster list.
+| Parameter         | Type                    | Description                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| isInterpreter     | boolean                 | Indicates the role of the                                                                                                                                                                                                                                                                                                                                                                       |
+| listenerVolume    | number                  | Volume for the listener for the main room when he is connected to a interpretation room. The value should be between 0 and 1.                                                                                                                                                                                                                                                                   |
+| languages         | Array<[string, string]> | Array in with element has a pair of value. The first value is the language code for creating the sub-room and the other the label. For example, an **element** of this array could be `["001", "English"]`. The first is used for creating the sub-room. If the main room is `"123"` the sub-room will be `"123001"`. The second value is used in the interface for referring to that language. |
+| startAudioMuted   | boolean                 | If true, the client will join to the main room with his audio muted.                                                                                                                                                                                                                                                                                                                            |
+| startVideoMuted   | boolean                 | If true, the client will join to the main room with his video muted.                                                                                                                                                                                                                                                                                                                            |
+| reuseListenerPin  | boolean                 | It's a feature for the listener, not the interpreter. If true, instead or displaying the PIN dialog when a PIN is required, it will try to reuse the main room PIN in the language room.                                                                                                                                                                                                        |
+| roleIndicator | boolean                 | If true, it shows the role (interpreter or listener) in the roster list.                                                                                                                                                                                                                                                                                                                     |
+| monitorSubRoom.enabled | boolean | <TODO> |
+| monitorSubRoom.rescanInterval | number | <TODO> |
+| monitorSubRoom.guestPin | string | <TODO> |
+
+In the following lines we will see some examples of configurations depending on the user role:
+
+### Moderator
+
+If we want to use this plugin for supervising, we will remove the ability of joining to a interpretation room, but leave some features that give us some information.
+
+We can **remove** the button for starting the interpretation by remove the following lines:
+
+```json
+  /* DELETE FROM HERE*/
+  "menuItems": {
+    "toolbar": [{
+      "action": "toggleInterpretation"
+    }]
+  },
+  /* TO HERE */
+```
+An the rest of the configuration will be something like this:
+
+```json
+  "configuration": {
+    "isInterpreter": null,
+    "listenerVolume": 0.1,
+    "startAudioMuted": false,
+    "startVideoMuted": false,
+    "reuseListenerPin": true,
+    "roleIndicator": true,
+    "monitorSubRooms": {
+      "enabled": true,
+      "rescanInterval": 30000,
+      "guestPin": "4321" 
+    },
+    "languages": [
+      ["0359", "Bulgarian"],
+      ["0420", "Czech"]
+    ]
+  }
+}
+```
+
+With this configuration with achieve the following:
+
+- User joins with microphone and camera enabled (`startAudioMuted` and `startVideoMuted`).
+- The user can see the role of other participants in the roster list (`roleIndicator`).
+- There is a panel on the bottom right corner with all the users that are connected to the interpretation rooms (`monitorSubRooms`). We scan every room each 30 seconds (`rescanInterval`). The guestPin for all the subrooms should be 4321 (guestPin).
+
+### Interpreter
+
+For the interpreter, we will need the toolbar button and to modify a little the configuration:
+
+```json
+  "menuItems": {
+    "toolbar": [{
+      "action": "toggleInterpretation"
+    }]
+  },
+  "configuration": {
+    "isInterpreter": true,
+    "listenerVolume": 0.1,
+    "startAudioMuted": false,
+    "startVideoMuted": true,
+    "reuseListenerPin": true,
+    "roleIndicator": true,
+    "monitorSubRooms": {
+      "enabled": false,
+      "rescanInterval": 30000,
+      "guestPin": "" 
+    },
+    "languages": [
+      ["0359", "Bulgarian"],
+      ["0420", "Czech"]
+    ]
+  }
+}
+
+```
+
+With this configuration, we will have the following:
+
+- We define the user role as interpreter (`isInterpreter`).
+- User joins with microphone enabled, but with camera disabled (`startAudioMuted` and `startVideoMuted`).
+- The user role of the other participants is displayed in the roster list (`roleIndicator`). The difference with the moderator is that in this case, it also notify its role to other participants.
+
+### Listener
+
+For the user the configuration is very similar, but with a couple of modifications:
+
+```json
+  "menuItems": {
+    "toolbar": [{
+      "action": "toggleInterpretation"
+    }]
+  },
+  "configuration": {
+    "isInterpreter": false,
+    "listenerVolume": 0.1,
+    "startAudioMuted": true,
+    "startVideoMuted": true,
+    "reuseListenerPin": true,
+    "roleIndicator": true,
+    "monitorSubRooms": {
+      "enabled": false,
+      "rescanInterval": 30000,
+      "guestPin": "" 
+    },
+    "languages": [
+      ["0359", "Bulgarian"],
+      ["0420", "Czech"]
+    ]
+  }
+}
+```
+
+With this configuration we get the following:
+
+- We define the user role as listener (`isInterpreter`).
+- User joins with microphone and camera disabled (`startAudioMuted` and `startVideoMuted`).
+- When the user is connected to a interpretation room, the volume of the main room will be a 10% of the total (`listenerVolume`).
+- When the user joins a interpretation room, he will use automatically the same pin that he used for the main room. This means that he won't be disturbed by a dialog (`reuseListenerPin`).
+- The user role of the other participants is displayed in the roster list (`roleIndicator`). This service also notify its own role to other participants.
 
 ## Testing in local
 
@@ -86,21 +210,7 @@ For the listener, you can use this command:
 
     $ npm run start-listener
 
-## Add a new configuration parameter
-
-Suppose that your are developing a new functionality for this plugin and you need to add a new configuration parameter to the `plugin.json` file.
-
-The first step is to add the new parameter to the file `src/config/config.ts`.
-
-Now we need to recreate the file `config-ti.ts` through the following command:
-
-    $ npx ts-interface-builder src/config/config.ts
-
-Now the plugin will check if this parameter exists, is valid and display an error message if necessary.
-
-Don't forget to modify the template located in `templates/plugin.json`.
-
-# Local policies example
+## Local policies example
 
 An easy way to test the plugin is to use a local policy. In this case we designed a local policy for testing. It will allow every VMR with 2 or 6 digits and will use the pins 1234 for the hosts and 4321 for the guests.
 
@@ -130,6 +240,20 @@ An easy way to test the plugin is to use a local policy. In this case we designe
 }
 
 ```
+
+## Add a new configuration parameter (developers only)
+
+Suppose that your are developing a new functionality for this plugin and you need to add a new configuration parameter to the `plugin.json` file.
+
+The first step is to add the new parameter to the file `src/config/config.ts`.
+
+Now we need to recreate the file `config-ti.ts` through the following command:
+
+    $ npx ts-interface-builder src/config/config.ts
+
+Now the plugin will check if this parameter exists, is valid and display an error message if necessary.
+
+Don't forget to modify the template located in `templates/plugin.json`.
 
 ## FAQ
 

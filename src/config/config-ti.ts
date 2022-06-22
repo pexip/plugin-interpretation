@@ -10,8 +10,12 @@ export const Config = t.iface([], {
   "startAudioMuted": "boolean",
   "startVideoMuted": "boolean",
   "reuseListenerPin": "boolean",
-  "roleIndicator" : "boolean",
-  "subRoomMonitor": "boolean",
+  "roleIndicator": "boolean",
+  "monitorSubRooms": t.iface([], {
+    "enabled": "boolean",
+    "rescanInterval": "number",
+    "guestPin": "string",
+  }),
   "languages": t.array(t.tuple("string", "string")),
 });
 

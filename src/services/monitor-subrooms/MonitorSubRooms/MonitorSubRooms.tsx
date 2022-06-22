@@ -2,9 +2,9 @@ import * as React from "react";
 import { Component } from "react";
 import { BehaviorSubject, Subscription } from "rxjs";
 
-import { InfoSubRoom } from "../monitor";
+import { InfoSubRoom } from "../monitor-subrooms";
 
-import './Monitor.scss';
+import './MonitorSubRooms.scss';
 
 interface Participant {
   displayName: string;
@@ -24,7 +24,7 @@ interface IProps {
   onClose: Function;
 }
 
-export class Monitor extends Component<IProps> {
+export class MonitorSubRooms extends Component<IProps> {
 
   private loadingPercentageSubscription: Subscription;
 
@@ -54,13 +54,14 @@ export class Monitor extends Component<IProps> {
                   : 'custom_configuration/plugins/interpretation/assets/images/listener.svg#off'
                 } />
             </svg>
+            <div className='tooltip'>{participant.isInterpreter ? 'Interpreter' : 'Participant'}</div>
         </td>
         <td>{participant.displayName}</td>
         <td>{participant.language}</td>
       </tr>
     ));
     return (
-      <div className={ this.state.showPanel ? 'Monitor selected' : 'Monitor'}>
+      <div className={ this.state.showPanel ? 'MonitorSubRooms selected' : 'MonitorSubRooms'}>
         <button className='header' onClick={this.togglePanel.bind(this)}>
           <svg>
             <use href='icons.svg#chevron-right'/>

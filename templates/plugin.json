@@ -19,7 +19,11 @@
     "startVideoMuted": true,
     "reuseListenerPin": true,
     "roleIndicator": true,
-    "subRoomMonitor": false,
+    "monitorSubRooms": {
+      "enabled": true,
+      "rescanInterval": 30000,
+      "guestPin": "4321" 
+    },
     "languages": [
       ["0359", "Bulgarian"],
       ["0420", "Czech"],

@@ -1,10 +1,10 @@
 import { InterpretationService } from './services/interpretation';
-import { MonitorService } from './services/monitor/monitor';
-import { RoleIndicatorService } from './services/roster-list/role-indicator/role-indicator';
+import { MonitorSubRoomsService } from './services/monitor-subrooms/monitor-subrooms';
+import { RoleIndicatorService } from './services/role-indicator/role-indicator';
 
 let interpretationService: InterpretationService;
 let roleIndicatorService : RoleIndicatorService;
-let monitorService: MonitorService;
+let monitorSubRoomsService: MonitorSubRoomsService;
 
 const state$ = (window as any).PEX.pluginAPI.createNewState({});
 
@@ -39,8 +39,12 @@ const load = async () => {
     }
   }
 
-  if (configuration.subRoomMonitor) {
-    monitorService = new MonitorService(configuration.languages);
+  if (configuration.monitorSubRooms.enabled) {
+    monitorSubRoomsService = new MonitorSubRoomsService(
+      configuration.languages,
+      configuration.monitorSubRooms.rescanInterval,
+      configuration.monitorSubRooms.guestPin
+    );
   }
 
   (window as any).PEX.actions$.ofType('[Conference] Connect Success').subscribe( (action: any) => {
@@ -50,14 +54,14 @@ const load = async () => {
     if (configuration.startVideoMuted) {
       (window as any).PEX.dispatchAction({type: '[Conference] Mute Camera'});
     }
-    if (configuration.showRoleIndicator) {
+    if (configuration.roleIndicator) {
       roleIndicatorService.init();
     }
     interpretationService = new InterpretationService(configuration, state$);
   });
-  if (configuration.subRoomMonitor) {
+  if (configuration.monitorSubRooms.enabled) {
     (window as any).PEX.actions$.ofType('[Conference] Set remote call type').subscribe( (action: any) => {
-      monitorService.init();
+      monitorSubRoomsService.init();
     });
   }
   
