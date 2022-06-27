@@ -17,29 +17,32 @@ interface ParticipantStatus {
 
 export class RoleIndicatorService {
 
-  private participants: ParticipantStatus[] = [];
-  private queryParams: URLSearchParams;
+  private participants: ParticipantStatus[];
 
-  constructor(queryParams: URLSearchParams) {
-    this.queryParams = queryParams;
-  }
+  constructor() {  }
 
-  setRole(isInterpreter: boolean) {
-    if (isInterpreter) {
-      this.setCallTag('interpreter');
-    } else {
-      this.setCallTag('listener'); 
+  setRole(queryParams: URLSearchParams, isInterpreter: boolean) {
+    let role = isInterpreter ? 'interpreter' : 'listener';
+    if (queryParams.get('callTag') != role) {
+      queryParams.set('callTag', role);
+      const url = new URL(
+        window.location.origin +
+        location.pathname.replace(/\/conference$/, '/home') +
+        '?' + queryParams.toString()
+      );
+      window.location.replace(url.toString());
     }
   }
 
-  cleanRole() {
-    if (this.queryParams.get('callTag')) {
-      this.queryParams.delete('callTag');
-      window.location.search = this.queryParams.toString();
+  cleanRole(queryParams: URLSearchParams) {
+    if (queryParams.get('callTag')) {
+      queryParams.delete('callTag');
+      window.location.search = queryParams.toString();
     }
   }
 
   init() {
+    this.participants = [];
     const pexrtc = (window as any).PEX.pexrtc;
     const originalOnParticipantCreate = pexrtc.onParticipantCreate;
     const originalOnParticipantUpdate = pexrtc.onParticipantUpdate;
@@ -56,13 +59,6 @@ export class RoleIndicatorService {
       originalOnParticipantDelete(payload);
       this.onParticipantDelete(payload);
     };
-  }
-
-  private setCallTag(value: string) {
-    if (this.queryParams.get('callTag') != value) {
-      this.queryParams.set('callTag', value);
-      window.location.search = this.queryParams.toString();
-    }
   }
 
   private onParticipantUpdate(participant: any) {

@@ -8,7 +8,7 @@ let monitorSubRoomsService: MonitorSubRoomsService;
 
 const state$ = (window as any).PEX.pluginAPI.createNewState({});
 
-const queryParams = new URLSearchParams(window.location.search);
+let queryParams = new URLSearchParams(window.location.search);
 
 const load = async () => {
   let response: Response;
@@ -30,12 +30,12 @@ const load = async () => {
   const isModerator = !json.menuItems?.toolbar;
 
   if (configuration.roleIndicator) {
-    roleIndicatorService = new RoleIndicatorService(queryParams);
+    roleIndicatorService = new RoleIndicatorService();
     // The moderator doesn't notify his role
     if (isModerator) {
-      roleIndicatorService.cleanRole();
+      roleIndicatorService.cleanRole(queryParams);
     } else {
-      roleIndicatorService.setRole(configuration.isInterpreter);
+      roleIndicatorService.setRole(queryParams, configuration.isInterpreter);
     }
   }
 
@@ -46,6 +46,17 @@ const load = async () => {
       configuration.monitorSubRooms.guestPin
     );
   }
+
+  (window as any).PEX.actions$.ofType('[Home] Screen state').subscribe( (action: any) => {
+    queryParams = new URLSearchParams(window.location.search);
+    if (configuration.roleIndicator) {
+      if (isModerator) {
+        roleIndicatorService.cleanRole(queryParams);
+      } else {
+        roleIndicatorService.setRole(queryParams, configuration.isInterpreter);
+      }
+    }
+  });
 
   (window as any).PEX.actions$.ofType('[Conference] Connect Success').subscribe( (action: any) => {
     if (configuration.startAudioMuted) {
@@ -59,6 +70,7 @@ const load = async () => {
     }
     interpretationService = new InterpretationService(configuration, state$);
   });
+
   if (configuration.monitorSubRooms.enabled) {
     (window as any).PEX.actions$.ofType('[Conference] Set remote call type').subscribe( (action: any) => {
       monitorSubRoomsService.init();
@@ -68,6 +80,7 @@ const load = async () => {
   (window as any).PEX.actions$.ofType('[Conference] Disconnect').subscribe(() => {
     interpretationService.disconnect();
   });
+  
 }
 
 (window as any).PEX.pluginAPI.registerPlugin({
