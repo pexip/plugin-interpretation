@@ -22,7 +22,7 @@
     "monitorSubRooms": {
       "enabled": true,
       "rescanInterval": 30000,
-      "guestPin": "4321" 
+      "guestPin": "5789" 
     },
     "languages": [
       ["0359", "Bulgarian"],

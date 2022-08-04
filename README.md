@@ -241,6 +241,29 @@ An easy way to test the plugin is to use a local policy. In this case we designe
 
 ```
 
+If you are using the `monitorSubRooms` feature, you will want to use a different `guest_pin` for this feature and limit the access to this user. You can do it with the following local policy:
+
+```python
+{
+  {% if (
+    (call_info.call_tag == "interpreter-monitor-subrooms")
+      and
+    (call_info.local_alias | pex_regex_replace('^\d{6}$',  '') == '') )
+  %}
+    "action": "continue",
+    "result": {{service_config | pex_update(
+      {
+        "guest_pin": "5789",
+        "call_type": "none"
+      }) | pex_to_json
+    }}
+  {% else %}
+    "action": "continue",
+    "result": {{service_config | pex_to_json}}
+  {% endif %}
+}
+```
+
 ## Add a new configuration parameter (developers only)
 
 Suppose that your are developing a new functionality for this plugin and you need to add a new configuration parameter to the `plugin.json` file.

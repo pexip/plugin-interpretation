@@ -50,7 +50,11 @@ export class MonitorSubRoomsService {
 
   private async scan(languageIndex: number = 0) {
     if (!this.interval) return;
+    try {
     await this.checkSubRoom(this.infoSubRooms[languageIndex]);
+    } catch (error) {
+      console.error(`Cannot monitor room ${this.infoSubRooms[languageIndex].language}. ${error}`);
+    }
     if (languageIndex < this.infoSubRooms.length - 1) {
       this.loadingPercentage$.next((languageIndex + 2) / this.languages.length * 100);
       this.scan(++languageIndex);
@@ -64,8 +68,9 @@ export class MonitorSubRoomsService {
       const pexRtcMainRoom = (window as any).PEX.pexrtc;
       // @ts-ignore
       const pexrtc = new PexRTC();
+      pexrtc.call_tag = 'interpreter-monitor-subrooms';
       const disconnect = () => pexrtc.disconnect();
-      pexrtc.onError = () => { reject() };
+      pexrtc.onError = (error: Error) => { reject(error) };
       pexrtc.onConnect = () => {
         window.addEventListener('beforeunload', disconnect);
       };

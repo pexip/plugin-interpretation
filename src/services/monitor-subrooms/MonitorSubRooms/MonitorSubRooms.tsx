@@ -47,8 +47,8 @@ export class MonitorSubRooms extends Component<IProps> {
       });
     });
 
-    const participantsRows = participants.map( (participant) => (
-      <tr>
+    const participantsRows = participants.map( (participant, index) => (
+      <tr key={index}>
         <td>
             <svg>
               <use href={
@@ -78,7 +78,9 @@ export class MonitorSubRooms extends Component<IProps> {
               { participants.length 
                 ?
                   <table>
-                    { participantsRows }
+                    <tbody>
+                      { participantsRows }
+                    </tbody>
                   </table>
                 :
                   <div className="no-content">No users in interpretation rooms</div>
