@@ -56,20 +56,21 @@ The main files are these two:
 
 This plugin allow to configure its behavior. It can be done by modifying the file `plugin.json`:
 
-| Parameter         | Type                    | Description                                                                                                                                                                                                                                                                                                                                                                                     |
-| ----------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| isInterpreter     | boolean                 | Indicates the role of the                                                                                                                                                                                                                                                                                                                                                                       |
-| listenerVolume    | number                  | Volume for the listener for the main room when he is connected to a interpretation room. The value should be between 0 and 1.                                                                                                                                                                                                                                                                   |
+| Parameter         | Type                    | Description  |
+| ----------------- | ----------------------- | ------------ |
+| isInterpreter     | boolean                 | Indicates the user role. Depending on the role the behaviour will be different |
+| listenerVolume    | number                  | Volume for the listener for the main room when he is connected to a interpretation room. The value should be between 0 and 1. |
 | languages         | Array<[string, string]> | Array in with element has a pair of value. The first value is the language code for creating the sub-room and the other the label. For example, an **element** of this array could be `["001", "English"]`. The first is used for creating the sub-room. If the main room is `"123"` the sub-room will be `"123001"`. The second value is used in the interface for referring to that language. |
-| startAudioMuted   | boolean                 | If true, the client will join to the main room with his audio muted.                                                                                                                                                                                                                                                                                                                            |
-| startVideoMuted   | boolean                 | If true, the client will join to the main room with his video muted.                                                                                                                                                                                                                                                                                                                            |
-| reuseListenerPin  | boolean                 | It's a feature for the listener, not the interpreter. If true, instead or displaying the PIN dialog when a PIN is required, it will try to reuse the main room PIN in the language room.                                                                                                                                                                                                        |
-| roleIndicator | boolean                 | If true, it shows the role (interpreter or listener) in the roster list.                                                                                                                                                                                                                                                                                                                     |
-| monitorSubRoom.enabled | boolean | <TODO> |
-| monitorSubRoom.rescanInterval | number | <TODO> |
-| monitorSubRoom.guestPin | string | <TODO> |
+| startAudioMuted   | boolean                 | If true, the client will join to the main room with his audio muted. |
+| startVideoMuted   | boolean                 | If true, the client will join to the main room with his video muted. |
+| reuseListenerPin  | boolean                 | It's a feature for the listener, not the interpreter. If true, instead or displaying the PIN dialog when a PIN is required, it will try to reuse the main room PIN in the language room. |
+| roleIndicator | boolean                     | If true, it shows the role (interpreter or listener) in the roster list. |
+| filterActiveLanguages  | boolean | Only display in the dialog the languages that have an interpreter (host user) connected. |
+| monitorSubRoom.enabled | boolean | Show a panel in the bottom-left corner with all the users connected to an interpretation room. |
+| monitorSubRoom.rescanInterval | number | Time in milliseconds for another rescan. Only works if the panel is opened. |
+| monitorSubRoom.guestPin | string | The guestPin used to check the language rooms.  |
 
-In the following lines we will see some examples of configurations depending on the user role:
+In the following lines we will see some examples of configurations depending on the user role.
 
 ### Moderator
 
@@ -96,6 +97,7 @@ An the rest of the configuration will be something like this:
     "startVideoMuted": false,
     "reuseListenerPin": true,
     "roleIndicator": true,
+    "filterActiveLanguages": false,
     "monitorSubRooms": {
       "enabled": true,
       "rescanInterval": 30000,
@@ -132,6 +134,7 @@ For the interpreter, we will need the toolbar button and to modify a little the 
     "startVideoMuted": true,
     "reuseListenerPin": true,
     "roleIndicator": true,
+    "filterActiveLanguages": false,
     "monitorSubRooms": {
       "enabled": false,
       "rescanInterval": 30000,
@@ -169,6 +172,7 @@ For the user the configuration is very similar, but with a couple of modificatio
     "startVideoMuted": true,
     "reuseListenerPin": true,
     "roleIndicator": true,
+    "filterActiveLanguages": true,
     "monitorSubRooms": {
       "enabled": false,
       "rescanInterval": 30000,
@@ -189,6 +193,7 @@ With this configuration we get the following:
 - When the user is connected to a interpretation room, the volume of the main room will be a 10% of the total (`listenerVolume`).
 - When the user joins a interpretation room, he will use automatically the same pin that he used for the main room. This means that he won't be disturbed by a dialog (`reuseListenerPin`).
 - The user role of the other participants is displayed in the roster list (`roleIndicator`). This service also notify its own role to other participants.
+- We only show the languages that are active in that moment (`filterActiveLanguages`). An active language is the one that as an interpreter (host user).
 
 ## Testing in local
 
@@ -260,6 +265,62 @@ If you are using the `monitorSubRooms` feature, you will want to use a different
   {% else %}
     "action": "continue",
     "result": {{service_config | pex_to_json}}
+  {% endif %}
+}
+```
+
+Here is the combination of the two local policies:
+
+```python
+{
+  {% if (
+    (call_info.call_tag == "interpreter-monitor-subrooms")
+      and
+    (call_info.local_alias | pex_regex_replace('^\d{6}$',  '') == '') )
+  %}
+    "action": "continue",
+    "result":
+      {
+        "service_type": "conference",
+        "name": "{{call_info.local_alias}}",
+        "service_tag": "pexip-interpreter",
+        "description": "",
+        "pin": "1234",
+        "guests_can_present": true,
+        "allow_guests": true,
+        "view": "four_mains_zero_pips",
+        "ivr_theme_name": "visitor_normal",
+        "locked": false,
+        "automatic_participants": [],
+        "enable_overlay_text": true,
+
+        "call_tag": "interpreter-monitor-subrooms",
+        "guest_pin": "5789",
+        "call_type": "none"
+    }
+  {% else %}
+    {% if (call_info.local_alias | pex_regex_replace('^(\d{2}|\d{6})$',  '') == '')  %}
+      "action": "continue",
+      "result": {
+          "service_type": "conference",
+          "name": "{{call_info.local_alias}}",
+          "service_tag": "pexip-interpreter",
+          "description": "",
+          "call_tag": "",
+          "pin": "1234",
+          "guest_pin": "",
+          "guests_can_present": true,
+          "allow_guests": true,
+          "view": "four_mains_zero_pips",
+          "ivr_theme_name": "visitor_normal",
+          "locked": false,
+          "automatic_participants": [],
+          "enable_overlay_text": true
+      }
+    {% else %}
+      "action": "continue",
+      "result": {{service_config | pex_to_json}}
+    {% endif %}
   {% endif %}
 }
 ```

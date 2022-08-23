@@ -1,7 +1,7 @@
 {
   "name": "plugin-interpretation",
   "author": "Marcos Cereijo",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Plugin for obtaining the translation of a room by a professional interpreter.",
   "scripts": {
     "start-interpreter": "NODE_ENV=interpreter webpack-dev-server --mode=development",
@@ -9,29 +9,29 @@
     "build": "webpack --mode=production"
   },
   "devDependencies": {
-    "@types/react": "^18.0.14",
-    "@types/react-dom":"^18.0.5",
+    "@types/react": "^18.0.17",
+    "@types/react-dom":"^18.0.6",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.7.1",
     "generate-json-webpack-plugin": "^2.0.0",
-    "ts-loader": "^9.3.0",
-    "sass": "^1.52.3",
-    "sass-loader": "^13.0.0",
+    "ts-loader": "^9.3.1",
+    "sass": "^1.54.5",
+    "sass-loader": "^13.0.2",
     "style-loader": "^3.3.1",
     "transform-json-webpack-plugin": "^0.0.2",
-    "webpack": "^5.73.0",
+    "webpack": "^5.74.0",
     "webpack-cli": "^4.10.0",
-    "webpack-dev-server": "^4.9.2"
+    "webpack-dev-server": "^4.10.0"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^6.1.1",
-    "@fortawesome/free-solid-svg-icons": "^6.1.1",
-    "@fortawesome/react-fontawesome": "^0.1.18",
+    "@fortawesome/fontawesome-svg-core": "^6.1.2",
+    "@fortawesome/free-solid-svg-icons": "^6.1.2",
+    "@fortawesome/react-fontawesome": "^0.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-tooltip": "^4.2.21",
-    "react-select": "^5.3.2",
-    "rxjs": "^7.5.5",
+    "react-select": "^5.4.0",
+    "rxjs": "^7.5.6",
     "ts-interface-checker": "^1.0.2"
   }
 }

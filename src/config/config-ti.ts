@@ -11,6 +11,7 @@ export const Config = t.iface([], {
   "startVideoMuted": "boolean",
   "reuseListenerPin": "boolean",
   "roleIndicator": "boolean",
+  "filterActiveLanguages": "boolean",
   "monitorSubRooms": t.iface([], {
     "enabled": "boolean",
     "rescanInterval": "number",

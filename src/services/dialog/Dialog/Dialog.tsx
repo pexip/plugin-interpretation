@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Component } from "react";
-import Select from "react-select";
+import AsyncSelect from "react-select/async";
 import { OptionType } from "../../../typings";
 
 import './Dialog.scss';
@@ -12,7 +12,7 @@ interface IProps {
   cancelCallback: Function;
   acceptText?: string;
   acceptCallback?: Function;
-  selectValues?: OptionType[];
+  loadOptions?: any;
   pinRequired?: boolean;
 }
 
@@ -43,7 +43,16 @@ export class Dialog extends Component<IProps> {
               {this.props.content}
             </div>
           }
-          { this.props.selectValues && <Select className="select" options={this.props.selectValues} onChange={this.selectChange.bind(this)} /> }
+          {
+            this.props.loadOptions &&
+              <AsyncSelect
+                cacheOptions
+                defaultOptions
+                className="select"
+                loadOptions={this.props.loadOptions}
+                onChange={this.selectChange.bind(this)}
+              /> 
+          }
           { this.props.pinRequired &&
               <input type="password" placeholder="Enter your PIN here" onChange={this.pinChange.bind(this)}
                 onKeyDown={(event: React.KeyboardEvent) => {
@@ -53,7 +62,7 @@ export class Dialog extends Component<IProps> {
           }
           <div className="buttons">
             { this.props.acceptText && <button className="accept"
-              disabled={(this.props.selectValues && !this.state.selectValue) || (this.props.pinRequired && !this.state.pin)}
+              disabled={(this.props.loadOptions && !this.state.selectValue) || (this.props.pinRequired && !this.state.pin)}
               onClick={() => {
                 this.props.acceptCallback(this.state.selectValue ? this.state.selectValue : this.state.pin);
               }}>{this.props.acceptText}</button> } 

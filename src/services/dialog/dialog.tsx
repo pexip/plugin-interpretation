@@ -11,7 +11,7 @@ interface DialogOptions {
   cancelCallback?: Function;
   acceptText?: string;
   acceptCallback?: Function;
-  selectValues?: OptionType[];
+  loadOptions?: any;
   pinRequired?: boolean;
 }
 
@@ -39,7 +39,7 @@ export class DialogService {
           cancelCallback={() => {this.hide(); if (options.cancelCallback) options.cancelCallback()}}
           acceptText={options.acceptText}
           acceptCallback={(value: any) => {this.hide(); if (options.acceptCallback) options.acceptCallback(value)}}
-          selectValues={options.selectValues}
+          loadOptions={options.loadOptions}
           pinRequired={options.pinRequired}
         />
       );

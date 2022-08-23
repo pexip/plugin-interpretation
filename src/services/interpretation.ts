@@ -6,11 +6,13 @@ import { SubRoomService } from './sub-room/sub-room';
 import { DialogService } from './dialog/dialog';
 import { StatusPanelService } from './status-panel/status-panel';
 import { OptionType } from '../typings';
+import { FilterActiveLanguagesService } from './filter-active-languages/filter-active-languages';
 
 export class InterpretationService {
 
   private subRoomService: SubRoomService;
   private dialogService: DialogService;
+  private filterActiveLanguagesService: FilterActiveLanguagesService;
   private statusPanelService: StatusPanelService;
   private currentLanguage: OptionType;
 
@@ -28,6 +30,7 @@ export class InterpretationService {
       throw Error(error + ' in the "configuration" attribute form package.json')
     }
     this.dialogService = new DialogService();
+    this.filterActiveLanguagesService = new FilterActiveLanguagesService(this.config.languages);
     this.subRoomService = new SubRoomService(
       this.config.isInterpreter,
       this.dialogService
@@ -39,7 +42,7 @@ export class InterpretationService {
   toggleInterpretation() {
 
     let action = '';
-    let selectValues = null;
+    let loadOptions = null;
     let acceptCallback = null;
     
     if (this.subRoomService.isConnected()) {
@@ -50,10 +53,27 @@ export class InterpretationService {
         action = 'Leave';
       }
     } else {
-      selectValues = this.config.languages.map( (language) => {return {
-        value: language[0],
-        label: language[1]
-      }});
+      if (this.config.filterActiveLanguages) {
+        loadOptions = (inputText: String) => {
+          return this.filterActiveLanguagesService.getActiveLanguages().then( (languages) => {
+            return languages.map( (language) => {
+              return {
+                value: language[0],
+                label: language[1]
+              }
+            });
+          });
+        };
+      } else {
+        loadOptions = (inputText: string) => {
+          return Promise.resolve(this.config.languages.map( (language) => {
+            return {
+              value: language[0],
+              label: language[1]
+            }
+          }));
+        };
+      }
       acceptCallback = this.startInterpretation.bind(this);
       if (this.config.isInterpreter) {
         action = 'Start';
@@ -67,7 +87,7 @@ export class InterpretationService {
       content: `Do you want to ${action.toLowerCase()} the interpretation? ${ !this.subRoomService.isConnected() ? 'Please, select a language:' : ''}`,
       acceptText: acceptText,
       acceptCallback: acceptCallback,
-      selectValues: selectValues
+      loadOptions: loadOptions
     })
     
   }

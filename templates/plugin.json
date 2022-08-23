@@ -19,6 +19,7 @@
     "startVideoMuted": true,
     "reuseListenerPin": true,
     "roleIndicator": true,
+    "filterActiveLanguages": null,
     "monitorSubRooms": {
       "enabled": true,
       "rescanInterval": 30000,
