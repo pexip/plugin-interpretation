@@ -19,6 +19,7 @@ if (isInterpreter) {
 
 pluginJson.version = package.version;
 pluginJson.configuration.isInterpreter = isInterpreter;
+pluginJson.configuration.filterActiveLanguages = !isInterpreter;
 
 module.exports = {
   devServer: {
