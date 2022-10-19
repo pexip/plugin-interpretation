@@ -1,10 +1,12 @@
 import * as React from 'react';
 import { Component } from "react";
 
+import { Role } from '../../../config/config';
+
 import './RoleIndicator.scss';
 
 interface IProps {
-  isInterpreter: boolean;
+  role: Role;
 }
 
 export class RoleIndicator extends Component<IProps> {
@@ -14,9 +16,9 @@ export class RoleIndicator extends Component<IProps> {
   return (
     <div className='RoleIndicator'>
       <svg>
-        <use href={this.props.isInterpreter ? interpreterIcon : listenerIcon}/>
+        <use href={this.props.role === Role.INTERPRETER ? interpreterIcon : listenerIcon}/>
       </svg>
-      <div className='tooltip'>{this.props.isInterpreter ? 'Interpreter' : 'Participant'}</div>
+      <div className='tooltip'>{this.props.role === Role.INTERPRETER ? 'Interpreter' : 'Participant'}</div>
     </div>
   );
  }

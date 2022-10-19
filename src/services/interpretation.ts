@@ -17,6 +17,7 @@ export class InterpretationService {
   private currentLanguage: OptionType;
 
   constructor(
+    private isInterpreter: boolean,
     private config: Config,
     private state$: any
   ) {
@@ -30,12 +31,15 @@ export class InterpretationService {
       throw Error(error + ' in the "configuration" attribute form package.json')
     }
     this.dialogService = new DialogService();
-    this.filterActiveLanguagesService = new FilterActiveLanguagesService(this.config.languages);
-    this.subRoomService = new SubRoomService(
-      this.config.isInterpreter,
-      this.dialogService
+    this.filterActiveLanguagesService = new FilterActiveLanguagesService(
+      this.config.languages,
+      this.config.filterActiveLanguages.simultaneousScans
     );
-    this.statusPanelService = new StatusPanelService(this.config.isInterpreter);
+    this.subRoomService = new SubRoomService(
+          isInterpreter,
+          this.dialogService
+        );
+    this.statusPanelService = new StatusPanelService(this.isInterpreter);
     this.updateIconState();
   }
 
@@ -47,13 +51,13 @@ export class InterpretationService {
     
     if (this.subRoomService.isConnected()) {
       acceptCallback = () => this.subRoomService.disconnect();
-      if (this.config.isInterpreter) {
+      if (this.isInterpreter) {
         action = 'Finish';
       } else {
         action = 'Leave';
       }
     } else {
-      if (this.config.filterActiveLanguages) {
+      if (!this.isInterpreter && this.config.filterActiveLanguages.enabled) {
         loadOptions = (inputText: String) => {
           return this.filterActiveLanguagesService.getActiveLanguages().then( (languages) => {
             return languages.map( (language) => {
@@ -75,7 +79,7 @@ export class InterpretationService {
         };
       }
       acceptCallback = this.startInterpretation.bind(this);
-      if (this.config.isInterpreter) {
+      if (this.isInterpreter) {
         action = 'Start';
       } else {
         action = 'Join';
@@ -114,7 +118,7 @@ export class InterpretationService {
   private updateIconState() {
     let state;
     const active = this.subRoomService.isConnected();
-    if (this.config.isInterpreter) {
+    if (this.isInterpreter) {
       state = {
         icon: `assets/images/interpreter.svg#${active ? 'on' : 'off'}`,
         label: `${active ? 'Stop' : 'Start'} live interpretation`
@@ -130,7 +134,7 @@ export class InterpretationService {
 
   private onConnect() {
     this.statusPanelService.show(this.currentLanguage.label, this.subRoomService.isConnected());
-    if (this.config.isInterpreter) {
+    if (this.isInterpreter) {
       (window as any).PEX.dispatchAction({type: '[Conference] Mute Microphone'});
     } else {
       this.setMainRoomVolume(this.config.listenerVolume);
@@ -141,7 +145,7 @@ export class InterpretationService {
   private onDisconnect() {
     this.statusPanelService.hide();
     this.updateIconState();
-    if (!this.config.isInterpreter) {
+    if (!this.isInterpreter) {
       this.setMainRoomVolume(1);
     }
   }

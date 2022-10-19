@@ -2,18 +2,29 @@ import { Subject } from "rxjs";
 
 export class FilterActiveLanguagesService {
 
-
-  //activeLanguages$ = new Subject<Array<[string, string]>>();
-
-  constructor(private languages: Array<[string, string]>) {}
+  constructor(
+    private languages: Array<[string, string]>,
+    private simultaneousScans: number
+  ) {}
 
   async getActiveLanguages() {
     const activeLanguages: Array<[string, string]> = [];
-    for (let i = 0; i < this.languages.length; i++) {
-      if (await this.isLanguageActive(this.languages[i][0])) {
-        activeLanguages.push(this.languages[i])
-        //this.activeLanguages$.next(activeLanguages);
+    for (let i = 0; i < this.languages.length; i += this.simultaneousScans) {
+      let maxScans = this.simultaneousScans;
+      // Check if it's the last one
+      if (this.languages.length - i < this.simultaneousScans) {
+        maxScans = this.languages.length % this.simultaneousScans;
       }
+      const promises: Promise<Boolean>[] = [];
+      for (let j = 0; j < maxScans; j++) {
+        const index = i + j;
+        const promise = this.isLanguageActive(this.languages[index][0]).then( (active) => {
+          if (active) activeLanguages.push(this.languages[index]); 
+          return active;
+        });
+        promises.push(promise);
+      }
+      await Promise.all(promises);
     }
     return activeLanguages;
   }

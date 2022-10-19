@@ -4,23 +4,34 @@
 import * as t from "ts-interface-checker";
 // tslint:disable:object-literal-key-quotes
 
+export const Role = t.enumtype({
+  "INTERPRETER": "interpreter",
+  "LISTENER": "listener",
+  "MODERATOR": "moderator",
+  "AUTO": "auto",
+});
+
 export const Config = t.iface([], {
-  "isInterpreter": "boolean",
+  "role": "Role",
+  "languages": t.array(t.tuple("string", "string")),
   "listenerVolume": "number",
   "startAudioMuted": "boolean",
   "startVideoMuted": "boolean",
   "reuseListenerPin": "boolean",
   "roleIndicator": "boolean",
-  "filterActiveLanguages": "boolean",
-  "monitorSubRooms": t.iface([], {
+  "filterActiveLanguages": t.iface([], {
     "enabled": "boolean",
+    "simultaneousScans": "number",
+  }),
+  "monitorSubRooms": t.iface([], {
     "rescanInterval": "number",
     "guestPin": "string",
+    "simultaneousScans": "number",
   }),
-  "languages": t.array(t.tuple("string", "string")),
 });
 
 const exportedTypeSuite: t.ITypeSuite = {
+  Role,
   Config,
 };
 export default exportedTypeSuite;

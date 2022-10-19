@@ -1,12 +1,7 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
+import { Role } from '../../config/config';
 import { RoleIndicator } from './RoleIndicator/RoleIndicator';
-
-enum Role {
-  INTERPRETER,
-  LISTENER,
-  NONE
-}
 
 interface ParticipantStatus {
   uuid: string;
@@ -21,10 +16,9 @@ export class RoleIndicatorService {
 
   constructor() {  }
 
-  setRole(queryParams: URLSearchParams, isInterpreter: boolean) {
-    let role = isInterpreter ? 'interpreter' : 'listener';
-    if (queryParams.get('callTag') != role) {
-      queryParams.set('callTag', role);
+  setRole(queryParams: URLSearchParams, role: Role) {
+    if (queryParams.get('callTag') != role.toString()) {
+      queryParams.set('callTag', role.toString());
       const url = new URL(
         window.location.origin +
         location.pathname.replace(/\/conference$/, '/home') +
@@ -63,7 +57,7 @@ export class RoleIndicatorService {
 
   private onParticipantUpdate(participant: any) {
  
-    let role = Role.NONE;
+    let role;
 
     if (participant.call_tag === 'interpreter') {
       role = Role.INTERPRETER;
@@ -84,7 +78,7 @@ export class RoleIndicatorService {
     }
     this.participants.sort( (a, b) =>  a.startTime - b.startTime);
     this.participants.forEach( (participant) => {
-      if (participant.role != Role.NONE) {
+      if (participant.role) {
         this.setRoleIndicator(participant.uuid, participant.role);
       }
     });
@@ -111,8 +105,7 @@ export class RoleIndicatorService {
         indicatorContainer.className = 'plugin-interpretation-interpreter-indicator';
         indicators.appendChild(indicatorContainer);
         const root = ReactDOM.createRoot(indicatorContainer);
-        const isInterpreter = role === Role.INTERPRETER
-        root.render(<RoleIndicator isInterpreter={isInterpreter}/>);
+        root.render(<RoleIndicator role={role} />);
       }
     }
     

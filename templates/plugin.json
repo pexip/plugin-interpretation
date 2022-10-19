@@ -9,21 +9,25 @@
   "participantRoles": ["chair", "guest"],
   "menuItems": {
     "toolbar": [{
+      "id": "interpretation-button",
       "action": "toggleInterpretation"
     }]
   },
   "configuration": {
-    "isInterpreter": null,
+    "role": null,
     "listenerVolume": 0.1,
     "startAudioMuted": true,
     "startVideoMuted": true,
     "reuseListenerPin": true,
     "roleIndicator": true,
-    "filterActiveLanguages": null,
-    "monitorSubRooms": {
+    "filterActiveLanguages": {
       "enabled": true,
+      "simultaneousScans": 4
+    },
+    "monitorSubRooms": {
       "rescanInterval": 30000,
-      "guestPin": "5789" 
+      "guestPin": "5789",
+      "simultaneousScans": 4
     },
     "languages": [
       ["0359", "Bulgarian"],

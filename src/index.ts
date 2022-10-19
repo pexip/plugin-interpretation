@@ -1,3 +1,4 @@
+import { Role } from './config/config';
 import { InterpretationService } from './services/interpretation';
 import { MonitorSubRoomsService } from './services/monitor-subrooms/monitor-subrooms';
 import { RoleIndicatorService } from './services/role-indicator/role-indicator';
@@ -23,37 +24,43 @@ const load = async () => {
   } 
 
   const json = await response.json();
- 
-  const configuration = json.configuration;
 
-     // The moderator shouldn't have an extra role icon
-  const isModerator = !json.menuItems?.toolbar;
+  const pluginId = json.id;
+  const configuration = json.configuration;
+  const menuItemId = json.menuItems.toolbar[0].id;
+
+  const role = getRole(configuration.role, queryParams);
 
   if (configuration.roleIndicator) {
     roleIndicatorService = new RoleIndicatorService();
     // The moderator doesn't notify his role
-    if (isModerator) {
+    if (role === Role.MODERATOR) {
       roleIndicatorService.cleanRole(queryParams);
     } else {
-      roleIndicatorService.setRole(queryParams, configuration.isInterpreter);
+      roleIndicatorService.setRole(queryParams, role);
     }
   }
 
-  if (configuration.monitorSubRooms.enabled) {
+  if (role === Role.MODERATOR) {
     monitorSubRoomsService = new MonitorSubRoomsService(
       configuration.languages,
       configuration.monitorSubRooms.rescanInterval,
-      configuration.monitorSubRooms.guestPin
+      configuration.monitorSubRooms.guestPin,
+      configuration.monitorSubRooms.simultaneousScans
     );
+    (window as any).PEX.actions$.ofType('[Conference] Set remote call type').subscribe( (action: any) => {
+      (window as any).PEX.pluginAPI.getPluginMenuItem(pluginId, menuItemId).hide();
+      monitorSubRoomsService.init();
+    });
   }
 
   (window as any).PEX.actions$.ofType('[Home] Screen state').subscribe( (action: any) => {
     queryParams = new URLSearchParams(window.location.search);
     if (configuration.roleIndicator) {
-      if (isModerator) {
+      if (role === Role.MODERATOR) {
         roleIndicatorService.cleanRole(queryParams);
       } else {
-        roleIndicatorService.setRole(queryParams, configuration.isInterpreter);
+        roleIndicatorService.setRole(queryParams, role);
       }
     }
   });
@@ -68,19 +75,38 @@ const load = async () => {
     if (configuration.roleIndicator) {
       roleIndicatorService.init();
     }
-    interpretationService = new InterpretationService(configuration, state$);
+    if (role === Role.INTERPRETER || role === Role.LISTENER) {
+      const isInterpreter = role === Role.INTERPRETER;
+      interpretationService = new InterpretationService(isInterpreter, configuration, state$);
+    }
   });
-
-  if (configuration.monitorSubRooms.enabled) {
-    (window as any).PEX.actions$.ofType('[Conference] Set remote call type').subscribe( (action: any) => {
-      monitorSubRoomsService.init();
-    });
-  }
   
   (window as any).PEX.actions$.ofType('[Conference] Disconnect').subscribe(() => {
-    interpretationService.disconnect();
+    if (role === Role.INTERPRETER || role === Role.LISTENER) {
+      interpretationService.disconnect();
+    }
   });
   
+}
+
+function getRole(role: Role, queryParams: URLSearchParams): Role {
+  if (role === Role.AUTO) {
+    const queryRole = queryParams.get("callTag");
+    switch (queryRole) {
+      case Role.INTERPRETER:
+      case Role.MODERATOR:
+      case Role.LISTENER:
+        localStorage.setItem('pexInterpretationRole', queryRole);
+        return queryRole;
+      default:
+        let savedRole = localStorage.getItem('pexInterpretationRole') as Role;
+        if (!savedRole) {
+          savedRole = Role.LISTENER;
+        }
+        return savedRole;
+    }
+  }
+  return role;
 }
 
 (window as any).PEX.pluginAPI.registerPlugin({

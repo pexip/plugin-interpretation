@@ -22,7 +22,8 @@ export class MonitorSubRoomsService {
   constructor(
     private languages: Array<[string, string]>,
     private rescanInterval: number,
-    private guestPin: string
+    private guestPin: string,
+    private simultaneousScans: number
   ) {}
 
   init() {
@@ -46,23 +47,39 @@ export class MonitorSubRoomsService {
 
   stopScanning() {
     clearInterval(this.interval);
+    this.interval = null;
   }
 
-  private async scan(languageIndex: number = 0) {
-    if (!this.interval) return;
-    try {
-    await this.checkSubRoom(this.infoSubRooms[languageIndex]);
-    } catch (error) {
-      console.error(`Cannot monitor room ${this.infoSubRooms[languageIndex].language}. ${error}`);
+  private async scan() {
+    let roomsScanned = 1;
+    for (let i = 0; i < this.infoSubRooms.length; i += this.simultaneousScans) {
+      let maxScans = this.simultaneousScans;
+      // Check if it's the last one
+      if (this.languages.length - i < this.simultaneousScans) {
+        maxScans = this.languages.length % this.simultaneousScans;
+      }
+      const promises: Promise<void>[] = [];
+      for (let j = 0; j < maxScans; j++) {
+        const index = i + j;
+        const promise = this.checkSubRoom(this.infoSubRooms[index])
+          .then(() => {
+            this.loadingPercentage$.next( ++roomsScanned / this.infoSubRooms.length * 100);
+            return Promise.resolve();
+          })
+          .catch( (error) => {
+            console.error(`Cannot monitor room for ${this.infoSubRooms[index].language[1]}. ${error}`);
+        });
+        promises.push(promise);
+      }
+      await Promise.all(promises);
+      if (!this.interval) {
+        this.loadingPercentage$.next(0);
+        return;
+      }
     }
-    if (languageIndex < this.infoSubRooms.length - 1) {
-      this.loadingPercentage$.next((languageIndex + 2) / this.languages.length * 100);
-      this.scan(++languageIndex);
-    } else {
-      this.loadingPercentage$.next(0);
-    }
+    this.loadingPercentage$.next(0);
   }
-
+  
   private checkSubRoom(infoSubRoom: InfoSubRoom) {
     return new Promise<void>( (resolve, reject) => {
       const pexRtcMainRoom = (window as any).PEX.pexrtc;

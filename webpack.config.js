@@ -3,23 +3,35 @@ const path = require('path');
 const GenerateJsonPlugin = require('generate-json-webpack-plugin');
 const CopyPlugin = require("copy-webpack-plugin");
 
-
 const package = require('./package.json');
 const pluginJson = require('./templates/plugin.json');
 
 const interpreterPort = process.env.npm_config_interpreter_port;
 const listenerPort = process.env.npm_config_listener_port;
+const moderatorPort = process.env.npm_config_moderator_port;
+const autoPort = process.env.npm_config_auto_port;
 const conferencingNodeUrl = process.env.npm_config_conferencing_node_url;
 
-let port = listenerPort;
-let isInterpreter = process.env.NODE_ENV === 'interpreter';
-if (isInterpreter) {
-  port = interpreterPort;
+let port;
+let role = process.env.NODE_ENV ? process.env.NODE_ENV : "auto";
+
+switch(role) {
+  case "interpreter":
+    port = interpreterPort;
+    break;
+  case "listener":
+    port = listenerPort;
+    break;
+  case "moderator":
+    port = moderatorPort;
+    break;
+  default:
+    port = autoPort;
+    break;
 }
 
 pluginJson.version = package.version;
-pluginJson.configuration.isInterpreter = isInterpreter;
-pluginJson.configuration.filterActiveLanguages = !isInterpreter;
+pluginJson.configuration.role = role;
 
 module.exports = {
   devServer: {
