@@ -9,8 +9,6 @@ let monitorSubRoomsService: MonitorSubRoomsService;
 
 const state$ = (window as any).PEX.pluginAPI.createNewState({});
 
-let queryParams = new URLSearchParams(window.location.search);
-
 const load = async () => {
   let response: Response;
   const filePath = './custom_configuration/plugins/interpretation/plugin.json';
@@ -29,6 +27,7 @@ const load = async () => {
   const configuration = json.configuration;
   const menuItemId = json.menuItems.toolbar[0].id;
 
+  let queryParams = new URLSearchParams(window.location.search);
   const role = getRole(configuration.role, queryParams);
 
   if (configuration.roleIndicator) {
