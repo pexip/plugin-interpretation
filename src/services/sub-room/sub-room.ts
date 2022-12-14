@@ -33,6 +33,11 @@ export class SubRoomService {
     this.pexRtcSubRoom.onError = this.onDisconnect.bind(this);
     this.pexRtcSubRoom.onDisconnect = this.onDisconnect.bind(this);
     window.addEventListener('beforeunload', this.disconnect.bind(this));
+    if (!this.isInterpreter) {
+      this.pexRtcSubRoom.audio_source = false;
+    }
+    this.pexRtcSubRoom.video_source = false;
+    this.pexRtcSubRoom.recv_video = false;
     this.pexRtcSubRoom.makeCall(
       this.pexRtcMainRoom.node,
       this.pexRtcMainRoom.conference + language.value,
@@ -54,6 +59,7 @@ export class SubRoomService {
   }
 
   private onConnect(remoteStream: MediaStream) {
+    if (!this.isInterpreter) this.pexRtcSubRoom.muteAudio(true);
     this.audio = new Audio();
     this.audio.srcObject = remoteStream;
     this.audio.play();
