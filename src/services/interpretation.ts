@@ -49,7 +49,6 @@ export class InterpretationService {
     );
     this.updateIconState();
     this.speakRoom = RoomType.Main;
-    console.log('TEST')
     this.audioMuteButtonState = this.config.startAudioMuted;
     this.initializeAudioMuteButton();
   }
@@ -113,9 +112,11 @@ export class InterpretationService {
 
   private startInterpretation(language: OptionType) {
     this.currentLanguage = language;
-    this.statusPanelService.show(language.label, this.subRoomService.isConnected(), );
+    this.statusPanelService.show(language.label, this.subRoomService.isConnected());
     this.subRoomService.connect(language, this.onConnect.bind(this), this.onDisconnect.bind(this), this.config.reuseListenerPin);
     this.speakRoom = RoomType.SubRoom;
+    (window as any).PEX.pexrtc.muteAudio(true);
+    this.subRoomService.muteAudio(this.audioMuteButtonState);
   }
 
   private setMainRoomVolume(value: number) {
@@ -160,7 +161,7 @@ export class InterpretationService {
       this.setMainRoomVolume(1);
     }
     this.speakRoom = RoomType.Main;
-    (window as any).PEX.pexrtc.muteAudio(this.audioMuteButtonState);
+    (window as any).PEX.pexrtc?.muteAudio(this.audioMuteButtonState);
   }
 
   /**
@@ -169,7 +170,6 @@ export class InterpretationService {
    */
   private handleChangeInterpreterSpeakRoom(room: RoomType) {
     this.speakRoom = room;
-
     // Configure the mute state
     if (this.audioMuteButtonState) {
       (window as any).PEX.pexrtc.muteAudio(true);

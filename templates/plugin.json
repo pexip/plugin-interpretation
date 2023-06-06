@@ -22,7 +22,7 @@
     "roleIndicator": true,
     "interpreterCanToggleRoom": true,
     "filterActiveLanguages": {
-      "enabled": true,
+      "enabled": false,
       "simultaneousScans": 4
     },
     "monitorSubRooms": {

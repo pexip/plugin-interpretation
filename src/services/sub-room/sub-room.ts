@@ -59,13 +59,11 @@ export class SubRoomService {
   }
 
   muteAudio(muted: boolean) {
-    console.log(this.pexRtcSubRoom)
-    console.log(this.pexRtcSubRoom?.mutedAudio)
     this.pexRtcSubRoom?.muteAudio(muted);
   }
 
   private onConnect(remoteStream: MediaStream) {
-    if (!this.isInterpreter) this.pexRtcSubRoom.muteAudio(true);
+    // if (!this.isInterpreter) this.pexRtcSubRoom.muteAudio(true);
     this.audio = new Audio();
     this.audio.srcObject = remoteStream;
     this.audio.play();
