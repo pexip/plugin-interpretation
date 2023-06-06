@@ -33,11 +33,11 @@ export class SubRoomService {
     this.pexRtcSubRoom.onError = this.onDisconnect.bind(this);
     this.pexRtcSubRoom.onDisconnect = this.onDisconnect.bind(this);
     window.addEventListener('beforeunload', this.disconnect.bind(this));
-    if (!this.isInterpreter) {
-      this.pexRtcSubRoom.audio_source = false;
-    }
-    this.pexRtcSubRoom.video_source = false;
-    this.pexRtcSubRoom.recv_video = false;
+    // if (!this.isInterpreter) {
+    //   this.pexRtcSubRoom.audio_source = false;
+    // }
+    // this.pexRtcSubRoom.video_source = false;
+    // this.pexRtcSubRoom.recv_video = false;
     this.pexRtcSubRoom.makeCall(
       this.pexRtcMainRoom.node,
       this.pexRtcMainRoom.conference + language.value,
@@ -56,6 +56,12 @@ export class SubRoomService {
 
   isConnected() {
     return this.pexRtcSubRoom?.state === 'ACTIVE';
+  }
+
+  muteAudio(muted: boolean) {
+    console.log(this.pexRtcSubRoom)
+    console.log(this.pexRtcSubRoom?.mutedAudio)
+    this.pexRtcSubRoom?.muteAudio(muted);
   }
 
   private onConnect(remoteStream: MediaStream) {

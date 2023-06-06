@@ -5,7 +5,7 @@ import { Config } from '../config/config';
 import { SubRoomService } from './sub-room/sub-room';
 import { DialogService } from './dialog/dialog';
 import { StatusPanelService } from './status-panel/status-panel';
-import { OptionType } from '../typings';
+import { OptionType, RoomType } from '../typings';
 import { FilterActiveLanguagesService } from './filter-active-languages/filter-active-languages';
 
 export class InterpretationService {
@@ -15,6 +15,9 @@ export class InterpretationService {
   private filterActiveLanguagesService: FilterActiveLanguagesService;
   private statusPanelService: StatusPanelService;
   private currentLanguage: OptionType;
+
+  private audioMuteButtonState: boolean;
+  private speakRoom: RoomType;
 
   constructor(
     private isInterpreter: boolean,
@@ -39,8 +42,16 @@ export class InterpretationService {
           isInterpreter,
           this.dialogService
         );
-    this.statusPanelService = new StatusPanelService(this.isInterpreter);
+    this.statusPanelService = new StatusPanelService(
+      this.isInterpreter,
+      this.config.interpreterCanToggleRoom,
+      this.handleChangeInterpreterSpeakRoom.bind(this)
+    );
     this.updateIconState();
+    this.speakRoom = RoomType.Main;
+    console.log('TEST')
+    this.audioMuteButtonState = this.config.startAudioMuted;
+    this.initializeAudioMuteButton();
   }
 
   toggleInterpretation() {
@@ -98,14 +109,13 @@ export class InterpretationService {
 
   disconnect() {
     this.subRoomService.disconnect();
-    this.dialogService.hide();
-    this.statusPanelService.hide();
   }
 
   private startInterpretation(language: OptionType) {
     this.currentLanguage = language;
-    this.statusPanelService.show(language.label, this.subRoomService.isConnected());
+    this.statusPanelService.show(language.label, this.subRoomService.isConnected(), );
     this.subRoomService.connect(language, this.onConnect.bind(this), this.onDisconnect.bind(this), this.config.reuseListenerPin);
+    this.speakRoom = RoomType.SubRoom;
   }
 
   private setMainRoomVolume(value: number) {
@@ -135,7 +145,7 @@ export class InterpretationService {
   private onConnect() {
     this.statusPanelService.show(this.currentLanguage.label, this.subRoomService.isConnected());
     if (this.isInterpreter) {
-      (window as any).PEX.dispatchAction({type: '[Conference] Mute Microphone'});
+      // (window as any).PEX.dispatchAction({type: '[Conference] Mute Microphone'});
     } else {
       this.setMainRoomVolume(this.config.listenerVolume);
     }
@@ -143,11 +153,53 @@ export class InterpretationService {
   }
 
   private onDisconnect() {
+    this.dialogService.hide();
     this.statusPanelService.hide();
     this.updateIconState();
     if (!this.isInterpreter) {
       this.setMainRoomVolume(1);
     }
+    this.speakRoom = RoomType.Main;
+    (window as any).PEX.pexrtc.muteAudio(this.audioMuteButtonState);
+  }
+
+  /**
+   * Used by the interpreter for choosing the room he wants to talk to.
+   * @param room RoomType that the interpreter selected.
+   */
+  private handleChangeInterpreterSpeakRoom(room: RoomType) {
+    this.speakRoom = room;
+
+    // Configure the mute state
+    if (this.audioMuteButtonState) {
+      (window as any).PEX.pexrtc.muteAudio(true);
+      this.subRoomService.muteAudio(true);
+    } else {
+      if (room === RoomType.Main) {
+        (window as any).PEX.pexrtc.muteAudio(false);
+        this.subRoomService.muteAudio(true);
+      } else {
+        (window as any).PEX.pexrtc.muteAudio(true);
+        this.subRoomService.muteAudio(false);
+      }
+    }
+  }
+
+  private initializeAudioMuteButton() {
+    (window as any).PEX.actions$.subscribe((action: any) => {
+      if (action.type === "[Conference] Unmute Microphone") {
+        this.audioMuteButtonState = false;
+        if (this.speakRoom === RoomType.SubRoom) {
+          // TODO: Check if we need the timeout of we have a better approach
+          setTimeout( () => (window as any).PEX.pexrtc.muteAudio(true), 1000);
+          this.subRoomService.muteAudio(false);
+        }
+      }
+      if (action.type === "[Conference] Mute Microphone") {
+        this.audioMuteButtonState = true;
+        this.subRoomService.muteAudio(true);
+      }
+    })
   }
 
 }

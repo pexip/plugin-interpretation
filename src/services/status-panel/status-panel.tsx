@@ -3,12 +3,17 @@ import * as React from 'react';
 import StatusPanel from './StatusPanel/StatusPanel';
 
 import * as ReactDOM from 'react-dom/client';
+import { RoomType } from '../../typings';
 
 export class StatusPanelService {
 
   private root: ReactDOM.Root;
 
-  constructor(private isInterpreter: boolean) {}
+  constructor(
+    private isInterpreter: boolean,
+    private interpreterCanToggleRoom: boolean,
+    private handleChangeInterpreterSpeakRoom: (room: RoomType) => void
+  ) {}
 
   show(language: string, connected: boolean) {
     if (this.root) this.root.unmount();
@@ -24,6 +29,8 @@ export class StatusPanelService {
         isInterpreter={this.isInterpreter}
         language={language}
         connected={connected}
+        interpreterCanToggleRoom={this.interpreterCanToggleRoom}
+        onSpeakerRoomChange={this.handleChangeInterpreterSpeakRoom}
       />
     );
   }

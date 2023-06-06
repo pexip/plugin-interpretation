@@ -19,6 +19,7 @@ export const Config = t.iface([], {
   "startVideoMuted": "boolean",
   "reuseListenerPin": "boolean",
   "roleIndicator": "boolean",
+  "interpreterCanToggleRoom": "boolean",
   "filterActiveLanguages": t.iface([], {
     "enabled": "boolean",
     "simultaneousScans": "number",

@@ -4,7 +4,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { Tooltip } from "@mui/material";
-import { SelectedRoom } from "../../../typings";
+import { RoomType } from "../../../typings";
 
 import './StatusPanel.scss';
 
@@ -12,13 +12,15 @@ interface StatusProps {
   isInterpreter: boolean;
   language: string;
   connected: boolean;
+  interpreterCanToggleRoom: boolean;
+  onSpeakerRoomChange?: (room: RoomType) => void
 }
 
 const StatusPanel = (props: StatusProps): JSX.Element => {
   const interpreterIcon = "custom_configuration/plugins/interpretation/assets/images/interpreter.svg#on";
   const listenerIcon = "custom_configuration/plugins/interpretation/assets/images/listener.svg#on";
 
-  const [selectedRoom, setSelectedRoom] = React.useState(SelectedRoom.InterpretationRoom)
+  const [selectedRoom, setSelectedRoom] = React.useState(RoomType.SubRoom);
 
   const handleSelectRoom = (
     event: React.MouseEvent<HTMLElement>,
@@ -27,9 +29,8 @@ const StatusPanel = (props: StatusProps): JSX.Element => {
     console.log(value)
     if (value != null)
       setSelectedRoom(value);
+      props.onSpeakerRoomChange(value);
   }
-
-  console.log(selectedRoom);
 
   return (
     <div className="StatusPanel">
@@ -40,23 +41,24 @@ const StatusPanel = (props: StatusProps): JSX.Element => {
         : <div className="loading-spinner"></div>
       }
       {props.language}
-      <ToggleButtonGroup
-        value={selectedRoom}
-        onChange={handleSelectRoom}
-        exclusive
-        >
-        
-        <ToggleButton value={SelectedRoom.InterpretationRoom} aria-label="interpretation room">
-          <Tooltip title={<h3 style={{ margin: 0 }}>Talk to interpretation room</h3>} >
-            <PublicIcon />
-          </Tooltip>
-        </ToggleButton>
-        <ToggleButton value={SelectedRoom.MainRoom} aria-label="main room">
-          <Tooltip title={<h3 style={{ margin: 0 }}>Talk to main room</h3>}>
-            <HomeIcon />
-          </Tooltip>
-        </ToggleButton>
-      </ToggleButtonGroup>
+      {props.isInterpreter && props.interpreterCanToggleRoom &&
+        <ToggleButtonGroup
+          value={selectedRoom}
+          onChange={handleSelectRoom}
+          exclusive
+          >    
+          <ToggleButton value={RoomType.SubRoom} aria-label="interpretation room">
+            <Tooltip title={<h3 style={{ margin: 0 }}>Talk to interpretation room</h3>} >
+              <PublicIcon />
+            </Tooltip>
+          </ToggleButton>
+          <ToggleButton value={RoomType.Main} aria-label="main room">
+            <Tooltip title={<h3 style={{ margin: 0 }}>Talk to main room</h3>}>
+              <HomeIcon />
+            </Tooltip>
+          </ToggleButton>
+        </ToggleButtonGroup>
+      }
     </div>
   )
   

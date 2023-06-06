@@ -3,7 +3,7 @@ export type OptionType = {
   label: string;
 };
 
-export enum SelectedRoom {
-  InterpretationRoom,
-  MainRoom
+export enum RoomType {
+  SubRoom,
+  Main
 };

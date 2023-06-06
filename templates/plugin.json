@@ -16,10 +16,11 @@
   "configuration": {
     "role": null,
     "listenerVolume": 0.1,
-    "startAudioMuted": true,
-    "startVideoMuted": true,
+    "startAudioMuted": false,
+    "startVideoMuted": false,
     "reuseListenerPin": true,
     "roleIndicator": true,
+    "interpreterCanToggleRoom": true,
     "filterActiveLanguages": {
       "enabled": true,
       "simultaneousScans": 4

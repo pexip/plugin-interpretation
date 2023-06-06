@@ -13,6 +13,7 @@ export interface Config {
   startVideoMuted: boolean;
   reuseListenerPin: boolean;
   roleIndicator: boolean;
+  interpreterCanToggleRoom: boolean;
   filterActiveLanguages: {
     enabled: boolean;
     simultaneousScans: number;
