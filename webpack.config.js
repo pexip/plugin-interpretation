@@ -42,9 +42,10 @@ module.exports = {
     port: port,
     compress: false, // needed for SSE support
     server: {
-      type: 'https'
+      type: 'https',
+
     },
-    open: true,
+    open: ['/webapp2/'],
     devMiddleware: {
       publicPath: '/webapp2/custom_configuration/plugins/interpretation'
     },
