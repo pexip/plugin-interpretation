@@ -24,6 +24,16 @@
       height: 24px;
       margin-right: 0.5em;
     }
+    button {
+      padding: 5px;
+      &.Mui-selected {
+        color: white;
+        background-color: #4A90E2;
+      }
+    }
+    div[role=group] {
+      margin-left: 5px;
+    }
   }
 }
 

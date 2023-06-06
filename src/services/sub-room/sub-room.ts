@@ -43,7 +43,7 @@ export class SubRoomService {
       this.pexRtcMainRoom.conference + language.value,
       this.pexRtcMainRoom.display_name,
       undefined,
-      this.isInterpreter ? "audioonly" : "recvonly"
+      'audioonly'
     );
   }
 

@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { StatusPanel } from './StatusPanel/StatusPanel';
+import StatusPanel from './StatusPanel/StatusPanel';
 
 import * as ReactDOM from 'react-dom/client';
 
