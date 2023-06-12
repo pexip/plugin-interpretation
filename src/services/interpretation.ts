@@ -8,16 +8,36 @@ import { StatusPanelService } from './status-panel/status-panel';
 import { OptionType, RoomType } from '../typings';
 import { FilterActiveLanguagesService } from './filter-active-languages/filter-active-languages';
 
+// enum ApplicationMessageType {
+//   InterpreterChannelChanged,
+//   RequestInterpreterChannelState
+// }
+
+// interface ApplicationMessage {
+//   direct: boolean;
+//   origin: string;
+//   payload: string;
+//   type: string;
+//   uuid: string;
+// }
+
+// interface ApplicationMessagePayload {
+//   type: ApplicationMessageType;
+//   value: {
+//     language: OptionType
+//   }
+// }
+
 export class InterpretationService {
 
   private subRoomService: SubRoomService;
   private dialogService: DialogService;
   private filterActiveLanguagesService: FilterActiveLanguagesService;
   private statusPanelService: StatusPanelService;
-  private currentLanguage: OptionType;
 
   private audioMuteButtonState: boolean;
   private speakRoom: RoomType;
+  // private currentMainVolume: number = 1;
 
   constructor(
     private isInterpreter: boolean,
@@ -51,6 +71,7 @@ export class InterpretationService {
     this.speakRoom = RoomType.Main;
     this.audioMuteButtonState = this.config.startAudioMuted;
     this.initializeAudioMuteButton();
+    // this.initializeApplicationMessages();
   }
 
   toggleInterpretation() {
@@ -111,11 +132,12 @@ export class InterpretationService {
   }
 
   private startInterpretation(language: OptionType) {
-    this.currentLanguage = language;
     this.statusPanelService.show(language.label, this.subRoomService.isConnected());
     this.subRoomService.connect(language, this.onConnect.bind(this), this.onDisconnect.bind(this), this.config.reuseListenerPin);
     this.speakRoom = RoomType.SubRoom;
-    (window as any).PEX.pexrtc.muteAudio(true);
+    if (this.isInterpreter) {
+      (window as any).PEX.pexrtc.muteAudio(true);
+    }
     this.subRoomService.muteAudio(this.audioMuteButtonState);
   }
 
@@ -144,11 +166,12 @@ export class InterpretationService {
   }
 
   private onConnect() {
-    this.statusPanelService.show(this.currentLanguage.label, this.subRoomService.isConnected());
-    if (this.isInterpreter) {
-      // (window as any).PEX.dispatchAction({type: '[Conference] Mute Microphone'});
-    } else {
+    const currentLanguage = this.subRoomService.getCurrentLanguage();
+    this.statusPanelService.show(currentLanguage.label, this.subRoomService.isConnected());
+    if (!this.isInterpreter) {
       this.setMainRoomVolume(this.config.listenerVolume);
+      this.changeInputVolumeMainRoom(this.config.listenerVolume);
+      // this.notifyRequestInterpreterChannelState(currentLanguage);
     }
     this.updateIconState();
   }
@@ -159,6 +182,7 @@ export class InterpretationService {
     this.updateIconState();
     if (!this.isInterpreter) {
       this.setMainRoomVolume(1);
+      this.changeInputVolumeMainRoom(1);
     }
     this.speakRoom = RoomType.Main;
     (window as any).PEX.pexrtc?.muteAudio(this.audioMuteButtonState);
@@ -183,6 +207,8 @@ export class InterpretationService {
         this.subRoomService.muteAudio(false);
       }
     }
+    // const channel = room === RoomType.Main ? this.subRoomService.getCurrentLanguage() : null;
+    // this.notifyInterpreterChannelChanged(channel);
   }
 
   private initializeAudioMuteButton() {
@@ -191,7 +217,10 @@ export class InterpretationService {
         this.audioMuteButtonState = false;
         if (this.speakRoom === RoomType.SubRoom) {
           // TODO: Check if we need the timeout of we have a better approach
-          setTimeout( () => (window as any).PEX.pexrtc.muteAudio(true), 1000);
+          if (this.isInterpreter) {
+            setTimeout( () => (window as any).PEX.pexrtc.muteAudio(true), 500);
+            setTimeout( () => (window as any).PEX.pexrtc.muteAudio(true), 1000);
+          }
           this.subRoomService.muteAudio(false);
         }
       }
@@ -202,4 +231,58 @@ export class InterpretationService {
     })
   }
 
+  // private notifyInterpreterChannelChanged(language: OptionType) {
+  //   (window as any).PEX.pexrtc.sendApplicationMessage({
+  //     type: ApplicationMessageType.InterpreterChannelChanged,
+  //     value: { language }
+  //   })
+  // }
+
+  // private notifyRequestInterpreterChannelState(language: OptionType) {
+  //   (window as any).PEX.pexrtc.sendApplicationMessage({
+  //     type: ApplicationMessageType.RequestInterpreterChannelState,
+  //     value: { language }
+  //   })
+  // }
+
+  // private initializeApplicationMessages() {
+  //   (window as any).PEX.pexrtc.onApplicationMessage = (message: ApplicationMessage) => {
+  //     console.log(message);
+  //     const payload = JSON.parse(message.payload) as ApplicationMessagePayload;
+  //     if (payload.type === ApplicationMessageType.InterpreterChannelChanged) {
+  //       if (payload.value.language === null) {
+  //         (window as any).PEX.pexrtc.muteAudio(false);
+  //       } else if (payload.value.language.value === this.subRoomService.getCurrentLanguage()?.value) {
+  //         (window as any).PEX.pexrtc.muteAudio(this.audioMuteButtonState);
+  //       }
+  //     } else if (payload.type === ApplicationMessageType.RequestInterpreterChannelState) {
+  //       if (
+  //         this.isInterpreter &&
+  //         this.subRoomService.isConnected() &&
+  //         payload.value.language.value === this.subRoomService.getCurrentLanguage()?.value
+  //       ) {
+  //         if (this.speakRoom === RoomType.Main) {
+  //           this.notifyInterpreterChannelChanged(this.subRoomService.getCurrentLanguage());
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
+
+  private changeInputVolumeMainRoom(volume: number) {
+    console.log('Changing volume to ' + volume);
+    if ((window as any).PEX.pexrtc == null) return;
+    // this.currentMainVolume = volume;
+    const stream = (window as any).PEX.pexrtc.call.mediaStream;
+    const audioContext = new AudioContext();
+    const gainNode = audioContext.createGain();
+    const audioSource = audioContext.createMediaStreamSource(stream);
+    const audioDestination = audioContext.createMediaStreamDestination();
+    audioSource.connect(gainNode);
+    gainNode.connect(audioDestination);
+    gainNode.gain.value = volume;
+    const currentSenders = (window as any).PEX.pexrtc.call.pc.getSenders()
+    const currentAudioSender = currentSenders.find((sender: RTCRtpSender) => sender.track.kind === 'audio');
+    currentAudioSender.replaceTrack(audioDestination.stream.getAudioTracks()[0]);
+  }
 }
