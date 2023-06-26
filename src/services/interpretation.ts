@@ -112,7 +112,7 @@ export class InterpretationService {
     const video = document.getElementById("mainVideo") as HTMLVideoElement;
     const audioBar = document.querySelector(".toolbar-audio-bar-fill") as HTMLDivElement;
     video.volume = value;
-    audioBar.style.width = value * 100 + '%';
+    if (audioBar) audioBar.style.width = value * 100 + '%';
   }
 
   private updateIconState() {

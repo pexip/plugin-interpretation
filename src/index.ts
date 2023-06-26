@@ -82,7 +82,7 @@ const load = async () => {
   
   (window as any).PEX.actions$.ofType('[Conference] Disconnect').subscribe(() => {
     if (role === Role.INTERPRETER || role === Role.LISTENER) {
-      interpretationService.disconnect();
+      interpretationService?.disconnect();
     }
   });
   
