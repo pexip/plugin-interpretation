@@ -9,6 +9,8 @@ let monitorSubRoomsService: MonitorSubRoomsService;
 
 const state$ = (window as any).PEX.pluginAPI.createNewState({});
 
+const localStorageKey = 'pexInterpretationRole'
+
 const load = async () => {
   let response: Response;
   const filePath = './custom_configuration/plugins/interpretation/plugin.json';
@@ -27,16 +29,21 @@ const load = async () => {
   const configuration = json.configuration;
   const menuItemId = json.menuItems.toolbar[0].id;
 
-  let queryParams = new URLSearchParams(window.location.search);
-  const role = getRole(configuration.role, queryParams);
+  let role: Role;
+  if (configuration.role === Role.AUTO) {
+    role = getRole();
+  } else {
+    role = configuration.role;
+  }
+  (window as any).role = role
 
   if (configuration.roleIndicator) {
     roleIndicatorService = new RoleIndicatorService();
-    // The moderator doesn't notify his role
-    if (role === Role.MODERATOR) {
-      roleIndicatorService.cleanRole(queryParams);
-    } else {
-      roleIndicatorService.setRole(queryParams, role);
+    const callTag = getCallTag()
+    if (callTag == null) {
+      const queryParams = new URLSearchParams(window.location.search);
+      queryParams.set('callTag', role)
+      window.location.search = queryParams.toString();
     }
   }
 
@@ -54,12 +61,12 @@ const load = async () => {
   }
 
   (window as any).PEX.actions$.ofType('[Home] Screen state').subscribe( (action: any) => {
-    queryParams = new URLSearchParams(window.location.search);
     if (configuration.roleIndicator) {
-      if (role === Role.MODERATOR) {
-        roleIndicatorService.cleanRole(queryParams);
-      } else {
-        roleIndicatorService.setRole(queryParams, role);
+      const callTag = getCallTag()
+      if (callTag == null) {
+        const queryParams = new URLSearchParams(window.location.search);
+        queryParams.set('callTag', role)
+        window.location.search = queryParams.toString();
       }
     }
   });
@@ -88,24 +95,30 @@ const load = async () => {
   
 }
 
-function getRole(role: Role, queryParams: URLSearchParams): Role {
-  if (role === Role.AUTO) {
-    const queryRole = queryParams.get("callTag");
-    switch (queryRole) {
-      case Role.INTERPRETER:
-      case Role.MODERATOR:
-      case Role.LISTENER:
-        localStorage.setItem('pexInterpretationRole', queryRole);
-        return queryRole;
-      default:
-        let savedRole = localStorage.getItem('pexInterpretationRole') as Role;
-        if (!savedRole) {
-          savedRole = Role.LISTENER;
-        }
-        return savedRole;
-    }
+function getRole(): Role {
+  const callTag = getCallTag()
+  switch (callTag) {
+    case Role.INTERPRETER:
+    case Role.MODERATOR:
+    case Role.LISTENER:
+      localStorage?.setItem(localStorageKey, callTag);
+      return callTag;
+    default:
+      let savedRole = localStorage?.getItem(localStorageKey) as Role;
+      if (!savedRole) {
+        savedRole = Role.LISTENER;
+      }
+      return savedRole;
   }
-  return role;
+}
+
+const getCallTag = (): string => {
+  let callTag = (window as any).PEX.conferenceQueryParams?.callTag;
+  if (callTag == null) {
+    const queryParams = new URLSearchParams(window.location.search);
+    callTag = queryParams.get('callTag');
+  }
+  return callTag
 }
 
 (window as any).PEX.pluginAPI.registerPlugin({

@@ -16,25 +16,6 @@ export class RoleIndicatorService {
 
   constructor() {  }
 
-  setRole(queryParams: URLSearchParams, role: Role) {
-    if (queryParams.get('callTag') != role.toString()) {
-      queryParams.set('callTag', role.toString());
-      const url = new URL(
-        window.location.origin +
-        location.pathname.replace(/\/conference$/, '/home') +
-        '?' + queryParams.toString()
-      );
-      window.location.replace(url.toString());
-    }
-  }
-
-  cleanRole(queryParams: URLSearchParams) {
-    if (queryParams.get('callTag')) {
-      queryParams.delete('callTag');
-      window.location.search = queryParams.toString();
-    }
-  }
-
   init() {
     this.participants = [];
     const pexrtc = (window as any).PEX.pexrtc;
@@ -104,11 +85,10 @@ export class RoleIndicatorService {
         indicatorContainer = document.createElement('li');
         indicatorContainer.className = 'plugin-interpretation-interpreter-indicator';
         indicators.appendChild(indicatorContainer);
-        const root = ReactDOM.createRoot(indicatorContainer);
-        root.render(<RoleIndicator role={role} />);
       }
+      const root = ReactDOM.createRoot(indicatorContainer);
+      root.render(<RoleIndicator role={role} />);
     }
-    
   }
 
 }
