@@ -1,0 +1,10 @@
+.Connecting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 1em;
+  color: var(--text-color-light-standard);
+  font-weight: var(--h5-weight-desktop);
+}

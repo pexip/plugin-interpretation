@@ -27,7 +27,10 @@ switch (role) {
 export default defineConfig({
   base: './',
   build: {
-    target: 'esnext'
+    target: 'esnext',
+    rollupOptions: {
+      input: ['index.html', 'dialog.html']
+    }
   },
   publicDir: config.publicDir,
   server: {
@@ -46,8 +49,5 @@ export default defineConfig({
       }
     }
   },
-  plugins: [
-    mkcert(),
-    react()
-  ]
+  plugins: [mkcert(), react()]
 })
