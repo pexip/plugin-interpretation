@@ -1,5 +1,5 @@
 import { config } from './config'
-import { capitalizeFirstLetter } from './utils'
+import { capitalizeFirstLetter } from './widget/utils'
 
 import type { Option } from './types/Option'
 import type { Language } from './types/Language'

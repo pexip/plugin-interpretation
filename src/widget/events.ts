@@ -1,0 +1,29 @@
+import { type InfinityParticipant } from '@pexip/plugin-api'
+import { getInterpretationContext } from './interpretationContext'
+import { MainRoom } from './main-room'
+import { getPlugin } from '../plugin'
+import { setUser } from '../plugin/user'
+
+export const initializeEvents = (): void => {
+  const plugin = getPlugin()
+  plugin.events.me.add(handleMe)
+  plugin.events.participants.add(handleParticipants)
+  plugin.events.disconnected.add(handleDisconnected)
+}
+
+const handleMe = (event: {
+  id: string
+  participant: InfinityParticipant
+}): void => {
+  setUser(event.participant)
+}
+
+const handleParticipants = (): void => {
+  // Reset the volume in the video HTML element. This is needed because the web
+  // app can re-create the element when a new participant joins.
+  MainRoom.refreshVolume()
+}
+
+const handleDisconnected = async (): Promise<void> => {
+  await getInterpretationContext().disconnect()
+}

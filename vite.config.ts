@@ -27,7 +27,13 @@ switch (role) {
 export default defineConfig({
   base: './',
   build: {
-    target: 'esnext'
+    target: 'esnext',
+    rollupOptions: {
+      input: {
+        main: './index.html',
+        widget: './widget.html'
+      }
+    }
   },
   publicDir: config.publicDir,
   server: {

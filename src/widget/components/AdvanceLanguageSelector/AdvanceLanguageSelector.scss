@@ -1,0 +1,47 @@
+.AdvanceLanguageSelector {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  min-height: 70px;
+
+  &.reversed {
+    flex-direction: row-reverse;
+  }
+
+  .exchange {
+    border: 0;
+    background-color: transparent;
+    cursor: pointer;
+    outline: 0;
+    align-self: end;
+    padding: 0.5em 1em;
+  }
+
+  .Select {
+    width: 50%;
+    span {
+      font-weight: normal;
+    }
+  }
+
+  .MainFloorSelect {
+    label {
+      color: inherit !important;
+    }
+    >div>div {
+      background-color: var(--select-light-background) !important;
+    }
+    >div>div>div {
+      color: var(--select-light-color);
+    }
+    
+    select:disabled {
+      cursor: default;
+    }
+
+    svg {
+      display: none;
+    }
+  }
+
+}

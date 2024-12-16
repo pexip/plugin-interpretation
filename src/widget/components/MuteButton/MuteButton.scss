@@ -1,0 +1,22 @@
+.MuteButton {
+  box-shadow: 0 0 0 1px inset #3c5974 !important;
+  min-height: 40px !important;
+
+  svg, span {
+    margin: auto;
+    color: rgb(60, 89, 116);
+  }
+
+  &:hover { 
+    background-color: transparent !important;
+  }
+
+  &.muted {
+    box-shadow: none !important;
+    background-color: #F24949 !important;
+  
+    svg, span {
+      color: white;
+    }
+  }
+}

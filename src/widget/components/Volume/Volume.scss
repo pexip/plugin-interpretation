@@ -1,0 +1,31 @@
+.Volume {
+  min-height: 90px;
+  padding: 10px;
+  box-sizing: border-box;
+
+  .VolumeSlider {
+    margin: 1em 0;
+    background-color: #E6E6E6;
+
+    &::-moz-range-thumb {
+      border: 2px solid #989898;
+      background-color: white;
+    }
+    &::-webkit-slider-thumb {
+      border: 2px solid #989898;
+      background-color: white;
+    }
+  }
+  .VolumeFooter {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    color: #777;
+    font-size: 0.9em;
+
+    &.MainFloorSelected .MainFloorLabel, &.InterpreterSelected .InterpreterLabel {
+      font-weight: 600;
+      color: #333;
+    }
+  }
+}
