@@ -67,7 +67,8 @@ const getWidgetHeight = (): string => {
   const role = config.role
   const showListenerMuteButton = config.listener?.speakToInterpretationRoom
 
-  const hasAdvancedLanguageSelector = config.interpreter?.allowChangeDirection
+  const hasAdvancedLanguageSelector =
+    role === Role.Interpreter && config.interpreter?.allowChangeDirection
   const hasVolume = role === Role.Listener
   const hasMuteButton = role === Role.Interpreter || showListenerMuteButton
 
