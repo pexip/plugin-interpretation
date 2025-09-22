@@ -45,7 +45,7 @@ export const showPinForm = async (): Promise<void> => {
   const { setPin, connect, disconnect, state } = getInterpretationContext()
   const { language } = state
 
-  if (input.pin != null) {
+  if (input.pin !== '') {
     if (language != null) {
       setPin(input.pin)
       await connect(language)

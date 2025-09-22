@@ -1,17 +1,26 @@
 import { Direction } from '../types/Direction'
 import type { Language } from '../types/Language'
-import { InterpretationActionType, type InterpretationAction } from './InterpretationAction'
+import {
+  InterpretationActionType,
+  type InterpretationAction
+} from './InterpretationAction'
 import type { InterpretationState } from './InterpretationState'
 
-export const interpretationReducer = (prevState: InterpretationState, action: InterpretationAction): InterpretationState => {
-  switch (action.type) {
+export const interpretationReducer = (
+  prevState: InterpretationState,
+  action: InterpretationAction
+): InterpretationState => {
+  const { type, body } = action
+  switch (type) {
     case InterpretationActionType.Connecting: {
-      const language: Language = action.body.language
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- no-unsafe-argument
+      const { language } = body as { language: Language }
+      const defaultVolume = 80
       return {
         ...prevState,
         connected: false,
         language,
-        volume: 80,
+        volume: defaultVolume,
         direction: Direction.MainRoomToInterpretation
       }
     }
@@ -28,35 +37,40 @@ export const interpretationReducer = (prevState: InterpretationState, action: In
       }
     }
     case InterpretationActionType.ChangedLanguage: {
-      const language: Language = action.body.language
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- no-unsafe-argument
+      const { language } = body as { language: Language }
       return {
         ...prevState,
         language
       }
     }
     case InterpretationActionType.ChangedDirection: {
-      const direction: Direction = action.body.direction
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- no-unsafe-argument
+      const { direction } = body as { direction: Direction }
       return {
         ...prevState,
         direction
       }
     }
     case InterpretationActionType.ChangedMute: {
-      const muted: boolean = action.body.muted
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- no-unsafe-argument
+      const { muted } = body as { muted: boolean }
       return {
         ...prevState,
         muted
       }
     }
     case InterpretationActionType.ChangedVolume: {
-      const volume: number = action.body.volume
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- no-unsafe-argument
+      const { volume } = body as { volume: number }
       return {
         ...prevState,
         volume
       }
     }
     case InterpretationActionType.Minimize: {
-      const minimized: boolean = action.body.minimized
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- no-unsafe-argument
+      const { minimized } = body as { minimized: boolean }
       return {
         ...prevState,
         minimized

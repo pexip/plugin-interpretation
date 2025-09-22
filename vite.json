@@ -2,22 +2,18 @@
   "infinityUrl": "https://192.168.1.101",
   "interpreter": {
     "port": 5173,
-    "brandingPath": "/interpreter",
     "publicDir": "./dev-public/interpreter"
   },
   "listener": {
     "port": 5174,
-    "brandingPath": "/listener",
     "publicDir": "./dev-public/listener"
   },
   "interpreterBidirectional": {
     "port": 5175,
-    "brandingPath": "/interpreter-bidirectional",
     "publicDir": "./dev-public/interpreter-bidirectional"
   },
   "listenerBidirectional": {
     "port": 5176,
-    "brandingPath": "/listener-bidirectional",
     "publicDir": "./dev-public/listener-bidirectional"
   }
 }

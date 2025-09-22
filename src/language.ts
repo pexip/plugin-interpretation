@@ -4,9 +4,8 @@ import { capitalizeFirstLetter } from './utils'
 import type { Option } from './types/Option'
 import type { Language } from './types/Language'
 
-export const getLanguageByCode = (code: string): Language | undefined => {
-  return config.languages.find((language) => language.code === code)
-}
+export const getLanguageByCode = (code: string): Language | undefined =>
+  config.languages.find((language) => language.code === code)
 
 export const getLanguageOptions = (): Option[] => {
   const options = config.languages.map((language) => ({

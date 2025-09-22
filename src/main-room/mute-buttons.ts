@@ -10,13 +10,17 @@ const foldedSelViewSelector = `button[data-testid=${foldedSelViewTestId}]`
 const qualitySelector = `button[data-testid=${selfViewWrapperTestId}]`
 const selfViewContainerSelector = `div[data-testid=${meetingWrapperTestId}]>div:nth-child(3)`
 
-const observerCallback = (mutationList: any): void => {
+const observerCallback = (): void => {
   disable(true)
 }
 
 const selfViewObserver = new MutationObserver(observerCallback)
 
-const selfViewObserverConfig = { attributes: false, childList: true, subtree: false }
+const selfViewObserverConfig = {
+  attributes: false,
+  childList: true,
+  subtree: false
+}
 
 const disable = (disabled: boolean): void => {
   const toolbarButton = getToolbarButton()
@@ -38,7 +42,9 @@ const disable = (disabled: boolean): void => {
   // Observe when the selfView is re-created and take the disable value from the
   // toolbar mute button and reflects it in the button in the selfView.
   if (disabled) {
-    const selfViewContainer = parent.document.querySelector(selfViewContainerSelector)
+    const selfViewContainer = parent.document.querySelector(
+      selfViewContainerSelector
+    )
     if (selfViewContainer != null) {
       selfViewObserver.observe(selfViewContainer, selfViewObserverConfig)
     }
@@ -50,7 +56,7 @@ const disable = (disabled: boolean): void => {
 const mute = (mute: boolean): void => {
   const toolbarButton = getToolbarButton()
   if (toolbarButton != null) {
-    const disabled = toolbarButton.disabled
+    const { disabled } = toolbarButton
     if (isMuted() !== mute) {
       if (disabled) {
         disable(false)
@@ -64,7 +70,8 @@ const mute = (mute: boolean): void => {
 }
 
 const isMuted = (): boolean => {
-  const toolbarButton: HTMLButtonElement | null = parent.document.querySelector(toolbarMutedSelector)
+  const toolbarButton: HTMLButtonElement | null =
+    parent.document.querySelector(toolbarMutedSelector)
   if (toolbarButton != null) {
     return true
   } else {
@@ -78,24 +85,30 @@ const enableButton = (button: HTMLButtonElement): void => {
 }
 
 const disableButton = (button: HTMLButtonElement): void => {
-  const isFoldedSelfView = button.getAttribute('data-testid') === foldedSelViewTestId
+  const isFoldedSelfView =
+    button.getAttribute('data-testid') === foldedSelViewTestId
 
   button.setAttribute('disabled', '')
   button.style.color = 'rgba(100, 100, 100, .35)'
-  button.style.backgroundColor = isFoldedSelfView ? 'transparent' : 'rgba(17, 17, 17, .65)'
+  button.style.backgroundColor = isFoldedSelfView
+    ? 'transparent'
+    : 'rgba(17, 17, 17, .65)'
   button.style.boxShadow = 'none'
   button.style.cursor = 'default'
   button.style.transition = 'none'
 }
 
 const getToolbarButton = (): HTMLButtonElement | null => {
-  const button = parent.document.querySelector(toolbarUnmutedSelector) ??
+  const button =
+    parent.document.querySelector(toolbarUnmutedSelector) ??
     parent.document.querySelector(toolbarMutedSelector)
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- no-unsafe-argument
   return button as HTMLButtonElement
 }
 
 const getFoldedSelfViewButton = (): HTMLButtonElement | null => {
   const button = parent.document.querySelector(foldedSelViewSelector)
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- no-unsafe-argument
   return button as HTMLButtonElement
 }
 
@@ -103,6 +116,7 @@ const getSelfViewButton = (): HTMLButtonElement | null => {
   const qualityButton = parent.document.querySelector(qualitySelector)
   if (qualityButton != null) {
     const button = qualityButton.parentNode?.querySelector('button:first-child')
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- no-unsafe-argument
     return button as HTMLButtonElement
   }
   return null

@@ -1,30 +1,50 @@
+/* eslint-disable max-lines -- we will disable this rule for now */
+/* eslint-disable max-nested-callbacks -- we need to nest more for the tests */
 import React from 'react'
-import { InterpretationContextProvider, useInterpretationContext } from './InterpretationContext'
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import {
+  InterpretationContextProvider,
+  useInterpretationContext
+} from './InterpretationContext'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { Language } from '../types/Language'
 import { Direction } from '../types/Direction'
 import { ClientCallType } from '@pexip/infinity'
 import { config } from '../config'
 import { Role } from '../types/Role'
+import { logger } from '../logger'
+import { setMainConferenceAlias } from '../conference'
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- we need to require the mediaDevices polyfill
 require('../__mocks__/mediaDevices')
+
+jest.mock('pino', () => ({
+  __esModule: true,
+  default: () => ({
+    info: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+    trace: jest.fn(),
+    fatal: jest.fn()
+  })
+}))
 
 const pauseStub = jest
   .spyOn(window.HTMLMediaElement.prototype, 'pause')
-  .mockImplementation(() => {})
+  .mockImplementation(() => undefined)
 
 const volumeStub = jest
   .spyOn(window.HTMLMediaElement.prototype, 'volume', 'set')
-  .mockImplementation(() => {})
+  .mockImplementation(() => undefined)
 
-jest.mock('../config', () => ({
-  config: {
-    role: 'interpreter',
-    listener: {
-      mainFloorVolume: 80
+jest.mock('../config', () => {
+  const mainFloorVolume = 80
+  return {
+    config: {
+      role: 'interpreter',
+      listener: { mainFloorVolume }
     }
   }
-}))
+})
 
 jest.mock('../user', () => ({
   getUser: () => ({
@@ -34,7 +54,9 @@ jest.mock('../user', () => ({
 
 const mockSetButtonActive = jest.fn()
 jest.mock('../button', () => ({
-  setButtonActive: (active: boolean) => mockSetButtonActive(active)
+  setButtonActive: (active: boolean) => {
+    mockSetButtonActive(active)
+  }
 }))
 
 const french: Language = {
@@ -55,12 +77,20 @@ const mockMainRoomSetVolume = jest.fn()
 const mockMainRoomRefreshVolume = jest.fn()
 jest.mock('../main-room', () => ({
   MainRoom: {
-    getMediaConstraints: () => mockMainRoomGetMediaConstraints(),
-    setMute: (muted: boolean) => mockMainRoomSetMute(muted),
-    isMuted: () => mockMainRoomIsMuted(),
-    disableMute: (disabled: boolean) => mockMainRoomDisableMute(disabled),
-    setVolume: (volume: number) => mockMainRoomSetVolume(volume),
-    refreshVolume: () => mockMainRoomRefreshVolume()
+    getMediaConstraints: () => mockMainRoomGetMediaConstraints() as unknown,
+    setMute: (muted: boolean) => {
+      mockMainRoomSetMute(muted)
+    },
+    isMuted: () => mockMainRoomIsMuted() as unknown,
+    disableMute: (disabled: boolean) => {
+      mockMainRoomDisableMute(disabled)
+    },
+    setVolume: (volume: number) => {
+      mockMainRoomSetVolume(volume)
+    },
+    refreshVolume: () => {
+      mockMainRoomRefreshVolume()
+    }
   }
 }))
 
@@ -70,41 +100,54 @@ const mockInfinitySetStream = jest.fn()
 const mockInfinityDisconnect = jest.fn()
 
 let protectedByPin = false
-let onAuthenticatedWithConferenceCallback: () => void
-jest.mock('@pexip/infinity', () => {
-  return {
-    ClientCallType: {
-      AudioRecvOnly: 0,
-      AudioSendOnly: 1
-    },
-    createInfinityClientSignals: jest.fn(() => ({
-      onAuthenticatedWithConference: {
-        add: jest.fn((callback) => {
-          onAuthenticatedWithConferenceCallback = callback
-        })
+let onAuthenticatedWithConferenceCallback: () => void = () => undefined
+jest.mock(
+  '@pexip/infinity',
+  () => {
+    const AudioRecvOnly = 0
+    const AudioSendOnly = 1
+    return {
+      ClientCallType: {
+        AudioRecvOnly,
+        AudioSendOnly
       },
-      onError: { add: jest.fn() },
-      onPinRequired: { add: jest.fn() }
-    })),
-    createCallSignals: jest.fn(() => ({
-      onRemoteStream: { add: jest.fn() }
-    })),
-    createInfinityClient: jest.fn(() => ({
-      call: (params: any) => {
-        mockInfinityCall(params)
-        if (!protectedByPin) {
-          onAuthenticatedWithConferenceCallback()
+      createInfinityClientSignals: jest.fn(() => ({
+        onAuthenticatedWithConference: {
+          add: jest.fn((callback) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- no-unsafe-argument
+            onAuthenticatedWithConferenceCallback = callback
+          })
+        },
+        onError: { add: jest.fn() },
+        onPinRequired: { add: jest.fn() }
+      })),
+      createCallSignals: jest.fn(() => ({
+        onRemoteStream: { add: jest.fn() }
+      })),
+      createInfinityClient: jest.fn(() => ({
+        call: (params: unknown) => {
+          mockInfinityCall(params)
+          if (!protectedByPin) {
+            onAuthenticatedWithConferenceCallback()
+          }
+        },
+        mute: (params: unknown) => {
+          mockInfinityMute(params)
+        },
+        setStream: (params: unknown) => {
+          mockInfinitySetStream(params)
+        },
+        disconnect: (params: unknown) => {
+          mockInfinityDisconnect(params)
         }
-      },
-      mute: (params: any) => { mockInfinityMute(params) },
-      setStream: (params: any) => { mockInfinitySetStream(params) },
-      disconnect: (params: any) => { mockInfinityDisconnect(params) }
-    }))
-  }
-}, { virtual: true })
+      }))
+    }
+  },
+  { virtual: true }
+)
 
-let newVolume: number = 0
-const InterpretationContextTester = (): JSX.Element => {
+let newVolume = 0
+const InterpretationContextTester = (): React.JSX.Element => {
   const {
     connect,
     disconnect,
@@ -116,35 +159,80 @@ const InterpretationContextTester = (): JSX.Element => {
     minimize,
     state
   } = useInterpretationContext()
-  const { role, connected, language, direction, muted, volume, minimized } = state
+  const { role, connected, language, direction, muted, volume, minimized } =
+    state
   return (
-    <div data-testid='InterpretationContextTester'>
-      <span data-testid='role'>{role}</span>
-      <span data-testid='connected'>{connected.toString()}</span>
-      <span data-testid='language'>{JSON.stringify(language)}</span>
-      <span data-testid='direction'>{direction}</span>
-      <span data-testid='muted'>{muted.toString()}</span>
-      <span data-testid='volume'>{volume}</span>
-      <span data-testid='minimized'>{minimized.toString()}</span>
-      <button data-testid='connect' onClick={() => { connect(french).catch((e) => { console.error(e) }) }} />
-      <button data-testid='disconnect' onClick={() => { disconnect().catch((e) => { console.error(e) }) }} />
-      <button data-testid='changeMediaDevice' onClick={() => { changeMediaDevice({}).catch((e) => { console.error(e) }) }} />
-      <button data-testid='changeLanguage' onClick={() => { changeLanguage(spanish).catch((e) => { console.error(e) }) }} />
-      <button data-testid='changeDirection' onClick={() => {
-        changeDirection(
-          direction === Direction.InterpretationToMainRoom
-            ? Direction.MainRoomToInterpretation
-            : Direction.InterpretationToMainRoom
-        ).catch((e) => { console.error(e) })
-      }} />
-      <button data-testid='changeMute' onClick={() => { changeMute(!muted).catch((e) => { console.error(e) }) }} />
-      <button data-testid='changeVolume' onClick={() => { changeVolume(newVolume) }} />
-      <button data-testid='minimize' onClick={() => { minimize(true) }} />
+    <div data-testid="InterpretationContextTester">
+      <span data-testid="role">{role}</span>
+      <span data-testid="connected">{connected.toString()}</span>
+      <span data-testid="language">{JSON.stringify(language)}</span>
+      <span data-testid="direction">{direction}</span>
+      <span data-testid="muted">{muted.toString()}</span>
+      <span data-testid="volume">{volume}</span>
+      <span data-testid="minimized">{minimized.toString()}</span>
+      <button
+        data-testid="connect"
+        onClick={() => {
+          connect(french).catch(logger.error)
+        }}
+      />
+      <button
+        data-testid="disconnect"
+        onClick={() => {
+          disconnect().catch(logger.error)
+        }}
+      />
+      <button
+        data-testid="changeMediaDevice"
+        onClick={() => {
+          changeMediaDevice({}).catch(logger.error)
+        }}
+      />
+      <button
+        data-testid="changeLanguage"
+        onClick={() => {
+          changeLanguage(spanish).catch(logger.error)
+        }}
+      />
+      <button
+        data-testid="changeDirection"
+        onClick={() => {
+          changeDirection(
+            direction === Direction.InterpretationToMainRoom
+              ? Direction.MainRoomToInterpretation
+              : Direction.InterpretationToMainRoom
+          ).catch(logger.error)
+        }}
+      />
+      <button
+        data-testid="changeMute"
+        onClick={() => {
+          changeMute(!muted).catch(logger.error)
+        }}
+      />
+      <button
+        data-testid="changeVolume"
+        onClick={() => {
+          changeVolume(newVolume)
+        }}
+      />
+      <button
+        data-testid="minimize"
+        onClick={() => {
+          minimize(true)
+        }}
+      />
     </div>
   )
 }
 
+const CALLED_ONCE = 1
+const CALLED_TWICE = 2
+
 describe('InterpretationContext', () => {
+  beforeAll(() => {
+    setMainConferenceAlias('test-conference-alias')
+  })
   beforeEach(() => {
     mockMainRoomGetMediaConstraints.mockClear()
     mockMainRoomSetMute.mockClear()
@@ -174,20 +262,21 @@ describe('InterpretationContext', () => {
   describe('connect', () => {
     describe('interpreter', () => {
       beforeEach(async () => {
-        config.role = Role.Interpreter
+        const { Interpreter } = Role
+        config.role = Interpreter
         render(
           <InterpretationContextProvider>
             <InterpretationContextTester />
           </InterpretationContextProvider>
         )
-        await act(async () => {
+        await waitFor(() => {
           const button = screen.getByTestId('connect')
           fireEvent.click(button)
         })
       })
 
-      it('should use callType=AudioSendOnly', async () => {
-        expect(mockInfinityCall).toHaveBeenCalledTimes(1)
+      it('should use callType=AudioSendOnly', () => {
+        expect(mockInfinityCall).toHaveBeenCalledTimes(CALLED_ONCE)
         expect(mockInfinityCall).toHaveBeenCalledWith(
           expect.objectContaining({
             callType: ClientCallType.AudioSendOnly
@@ -195,8 +284,8 @@ describe('InterpretationContext', () => {
         )
       })
 
-      it('should add " - Interpreter" at the end of the displayName', async () => {
-        expect(mockInfinityCall).toHaveBeenCalledTimes(1)
+      it('should add " - Interpreter" at the end of the displayName', () => {
+        expect(mockInfinityCall).toHaveBeenCalledTimes(CALLED_ONCE)
         expect(mockInfinityCall).toHaveBeenCalledWith(
           expect.objectContaining({
             displayName: 'user-display-name - Interpreter'
@@ -204,13 +293,14 @@ describe('InterpretationContext', () => {
         )
       })
 
-      it('should pass a mediaStream', async () => {
-        expect(mockInfinityCall).toHaveBeenCalledTimes(1)
+      it('should pass a mediaStream', () => {
+        expect(mockInfinityCall).toHaveBeenCalledTimes(CALLED_ONCE)
         expect(mockInfinityCall).toHaveBeenCalledWith(
           expect.objectContaining({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- no-unsafe-assertion
             mediaStream: expect.objectContaining({
               active: true
-            })
+            }) as MediaStream
           })
         )
       })
@@ -218,20 +308,21 @@ describe('InterpretationContext', () => {
 
     describe('listener', () => {
       beforeEach(async () => {
-        config.role = Role.Listener
+        const { Listener } = Role
+        config.role = Listener
         render(
           <InterpretationContextProvider>
             <InterpretationContextTester />
           </InterpretationContextProvider>
         )
-        await act(async () => {
+        await waitFor(() => {
           const button = screen.getByTestId('connect')
           fireEvent.click(button)
         })
       })
 
-      it('should use callType=AudioRecvOnly', async () => {
-        expect(mockInfinityCall).toHaveBeenCalledTimes(1)
+      it('should use callType=AudioRecvOnly', () => {
+        expect(mockInfinityCall).toHaveBeenCalledTimes(CALLED_ONCE)
         expect(mockInfinityCall).toHaveBeenCalledWith(
           expect.objectContaining({
             callType: ClientCallType.AudioRecvOnly
@@ -239,8 +330,8 @@ describe('InterpretationContext', () => {
         )
       })
 
-      it('should add " - Listener" at the end of the displayName', async () => {
-        expect(mockInfinityCall).toHaveBeenCalledTimes(1)
+      it('should add " - Listener" at the end of the displayName', () => {
+        expect(mockInfinityCall).toHaveBeenCalledTimes(CALLED_ONCE)
         expect(mockInfinityCall).toHaveBeenCalledWith(
           expect.objectContaining({
             displayName: 'user-display-name - Listener'
@@ -248,8 +339,8 @@ describe('InterpretationContext', () => {
         )
       })
 
-      it('should\'t pass a mediaStream', async () => {
-        expect(mockInfinityCall).toHaveBeenCalledTimes(1)
+      it("should't pass a mediaStream", () => {
+        expect(mockInfinityCall).toHaveBeenCalledTimes(CALLED_ONCE)
         expect(mockInfinityCall).toHaveBeenCalledWith(
           expect.objectContaining({
             mediaStream: undefined
@@ -266,17 +357,18 @@ describe('InterpretationContext', () => {
             <InterpretationContextTester />
           </InterpretationContextProvider>
         )
-        await act(async () => {
+        await waitFor(() => {
           const button = screen.getByTestId('connect')
           fireEvent.click(button)
         })
       })
 
-      it('should set the correct states', async () => {
+      it('should set the correct states', () => {
         const expectedConnected = false
         const expectedLanguage = french
         const expectedVolume = 80
-        const expectedDirection = Direction.MainRoomToInterpretation
+        const { MainRoomToInterpretation } = Direction
+        const expectedDirection = MainRoomToInterpretation
 
         const connected = screen.getByTestId('connected')
         expect(connected.innerHTML).toBe(expectedConnected.toString())
@@ -297,17 +389,17 @@ describe('InterpretationContext', () => {
             <InterpretationContextTester />
           </InterpretationContextProvider>
         )
-        await act(async () => {
+        await waitFor(() => {
           const button = screen.getByTestId('connect')
           fireEvent.click(button)
         })
       })
 
-      it('should set the correct states', async () => {
+      it('should set the correct states', () => {
         const expectedConnected = true
         const expectedLanguage = french
         const expectedVolume = 80
-        const expectedDirection = Direction.MainRoomToInterpretation
+        const { MainRoomToInterpretation: expectedDirection } = Direction
 
         const connected = screen.getByTestId('connected')
         expect(connected.innerHTML).toBe(expectedConnected.toString())
@@ -324,20 +416,21 @@ describe('InterpretationContext', () => {
       describe('interpreter', () => {
         beforeEach(async () => {
           protectedByPin = true
-          config.role = Role.Interpreter
+          const { Interpreter } = Role
+          config.role = Interpreter
           render(
             <InterpretationContextProvider>
               <InterpretationContextTester />
             </InterpretationContextProvider>
           )
-          await act(async () => {
+          await waitFor(() => {
             const button = screen.getByTestId('connect')
             fireEvent.click(button)
           })
         })
 
         it('should change the state to connected', async () => {
-          await act(async () => {
+          await waitFor(() => {
             onAuthenticatedWithConferenceCallback()
           })
           const connected = screen.getByTestId('connected')
@@ -345,35 +438,35 @@ describe('InterpretationContext', () => {
         })
 
         it('should disable the main room mute', async () => {
-          await act(async () => {
+          await waitFor(() => {
             onAuthenticatedWithConferenceCallback()
           })
-          expect(mockMainRoomDisableMute).toHaveBeenCalledTimes(1)
+          expect(mockMainRoomDisableMute).toHaveBeenCalledTimes(CALLED_ONCE)
           expect(mockMainRoomDisableMute).toHaveBeenCalledWith(true)
         })
 
         it('should change the toolbar button to active', async () => {
-          await act(async () => {
+          await waitFor(() => {
             onAuthenticatedWithConferenceCallback()
           })
-          expect(mockSetButtonActive).toHaveBeenCalledTimes(1)
+          expect(mockSetButtonActive).toHaveBeenCalledTimes(CALLED_ONCE)
           expect(mockSetButtonActive).toHaveBeenLastCalledWith(true)
         })
 
         describe('main room unmuted', () => {
           beforeEach(async () => {
             mockMainRoomIsMuted.mockReturnValue(false)
-            await act(async () => {
+            await waitFor(() => {
               onAuthenticatedWithConferenceCallback()
             })
           })
 
-          it('should mute the main room if not muted before', async () => {
-            expect(mockMainRoomSetMute).toHaveBeenCalledTimes(1)
+          it('should mute the main room if not muted before', () => {
+            expect(mockMainRoomSetMute).toHaveBeenCalledTimes(CALLED_ONCE)
             expect(mockMainRoomSetMute).toHaveBeenCalledWith(true)
           })
 
-          it('shouldn\'t mute the interpretation room', () => {
+          it("shouldn't mute the interpretation room", () => {
             expect(mockInfinityMute).not.toHaveBeenCalled()
           })
         })
@@ -381,17 +474,17 @@ describe('InterpretationContext', () => {
         describe('main room muted', () => {
           beforeEach(async () => {
             mockMainRoomIsMuted.mockReturnValue(true)
-            await act(async () => {
+            await waitFor(() => {
               onAuthenticatedWithConferenceCallback()
             })
           })
 
-          it('shouldn\'t mute the main room', async () => {
+          it("shouldn't mute the main room", () => {
             expect(mockMainRoomSetMute).not.toHaveBeenCalled()
           })
 
           it('should mute the interpretation room', () => {
-            expect(mockInfinityMute).toHaveBeenCalledTimes(1)
+            expect(mockInfinityMute).toHaveBeenCalledTimes(CALLED_ONCE)
             expect(mockInfinityMute).toHaveBeenCalledWith({ mute: true })
           })
         })
@@ -399,18 +492,19 @@ describe('InterpretationContext', () => {
 
       describe('listener', () => {
         const renderConnectedListenerTest = async (): Promise<void> => {
-          config.role = Role.Listener
+          const { Listener } = Role
+          config.role = Listener
           protectedByPin = true
           render(
             <InterpretationContextProvider>
               <InterpretationContextTester />
             </InterpretationContextProvider>
           )
-          await act(async () => {
+          await waitFor(() => {
             const button = screen.getByTestId('connect')
             fireEvent.click(button)
           })
-          await act(async () => {
+          await waitFor(() => {
             onAuthenticatedWithConferenceCallback()
           })
         }
@@ -422,8 +516,10 @@ describe('InterpretationContext', () => {
         })
 
         describe('speakToInterpretationRoom === false', () => {
-          it('shouldn\'t disable the main room mute', async () => {
-            config.listener.speakToInterpretationRoom = false
+          it("shouldn't disable the main room mute", async () => {
+            if (config.listener != null) {
+              config.listener.speakToInterpretationRoom = false
+            }
             await renderConnectedListenerTest()
             expect(mockMainRoomDisableMute).not.toHaveBeenCalled()
           })
@@ -431,9 +527,11 @@ describe('InterpretationContext', () => {
 
         describe('speakToInterpretationRoom === true', () => {
           it('should disable the main room mute', async () => {
-            config.listener.speakToInterpretationRoom = true
+            if (config.listener != null) {
+              config.listener.speakToInterpretationRoom = true
+            }
             await renderConnectedListenerTest()
-            expect(mockMainRoomDisableMute).toHaveBeenCalledTimes(1)
+            expect(mockMainRoomDisableMute).toHaveBeenCalledTimes(CALLED_ONCE)
             expect(mockMainRoomDisableMute).toHaveBeenCalledWith(true)
           })
         })
@@ -442,24 +540,27 @@ describe('InterpretationContext', () => {
   })
 
   describe('disconnect', () => {
-    const renderDisconnectionTest = async (shouldMuteInterpretation = false): Promise<void> => {
-      config.role = Role.Interpreter
+    const renderDisconnectionTest = async (
+      shouldMuteInterpretation = false
+    ): Promise<void> => {
+      const { Interpreter } = Role
+      config.role = Interpreter
       render(
         <InterpretationContextProvider>
           <InterpretationContextTester />
         </InterpretationContextProvider>
       )
 
-      await act(async () => {
+      await waitFor(() => {
         onAuthenticatedWithConferenceCallback()
       })
-      await act(async () => {
+      await waitFor(() => {
         if (shouldMuteInterpretation) {
           const buttonMute = screen.getByTestId('changeMute')
           fireEvent.click(buttonMute)
         }
       })
-      await act(async () => {
+      await waitFor(() => {
         const buttonDisconnect = screen.getByTestId('disconnect')
         fireEvent.click(buttonDisconnect)
       })
@@ -473,43 +574,46 @@ describe('InterpretationContext', () => {
 
     it('should pause the audio', async () => {
       await renderDisconnectionTest()
-      expect(pauseStub).toHaveBeenCalledTimes(1)
+      expect(pauseStub).toHaveBeenCalledTimes(CALLED_ONCE)
     })
 
     it('should call infinityClient.disconnect', async () => {
       await renderDisconnectionTest()
-      expect(mockInfinityDisconnect).toHaveBeenCalledTimes(1)
-      expect(mockInfinityDisconnect).toHaveBeenCalledWith({ reason: 'User initiated disconnect' })
+      expect(mockInfinityDisconnect).toHaveBeenCalledTimes(CALLED_ONCE)
+      expect(mockInfinityDisconnect).toHaveBeenCalledWith({
+        reason: 'User initiated disconnect'
+      })
     })
 
     it('should set the volume in the main room to 1', async () => {
       await renderDisconnectionTest()
-      expect(mockMainRoomSetVolume).toHaveBeenCalledTimes(1)
-      expect(mockMainRoomSetVolume).toHaveBeenCalledWith(1)
+      expect(mockMainRoomSetVolume).toHaveBeenCalledTimes(CALLED_ONCE)
+      const expectedVolume = 1
+      expect(mockMainRoomSetVolume).toHaveBeenCalledWith(expectedVolume)
     })
 
     it('should enable the mute buttons', async () => {
       await renderDisconnectionTest()
-      expect(mockMainRoomDisableMute).toHaveBeenCalledTimes(2)
+      expect(mockMainRoomDisableMute).toHaveBeenCalledTimes(CALLED_TWICE)
       expect(mockMainRoomDisableMute).toHaveBeenCalledWith(false)
     })
 
     it('should change the toolbar button to active', async () => {
       await renderDisconnectionTest()
-      expect(mockSetButtonActive).toHaveBeenCalledTimes(2)
+      expect(mockSetButtonActive).toHaveBeenCalledTimes(CALLED_TWICE)
       expect(mockSetButtonActive).toHaveBeenLastCalledWith(false)
     })
 
     it('should come back to the main room unmuted if the interpretation was unmuted', async () => {
       await renderDisconnectionTest()
-      expect(mockMainRoomSetMute).toHaveBeenCalledTimes(1)
+      expect(mockMainRoomSetMute).toHaveBeenCalledTimes(CALLED_ONCE)
       expect(mockMainRoomSetMute).toHaveBeenCalledWith(false)
     })
 
     it('should come back to the main room muted if the interpretation was muted', async () => {
       const shouldMuteInterpretation = true
       await renderDisconnectionTest(shouldMuteInterpretation)
-      expect(mockMainRoomSetMute).toHaveBeenCalledTimes(1)
+      expect(mockMainRoomSetMute).toHaveBeenCalledTimes(CALLED_ONCE)
       expect(mockMainRoomSetMute).toHaveBeenCalledWith(true)
     })
   })
@@ -521,27 +625,27 @@ describe('InterpretationContext', () => {
           <InterpretationContextTester />
         </InterpretationContextProvider>
       )
-      await act(async () => {
+      await waitFor(() => {
         const button = screen.getByTestId('connect')
         fireEvent.click(button)
       })
-      await act(async () => {
+      await waitFor(() => {
         onAuthenticatedWithConferenceCallback()
       })
-      await act(async () => {
+      await waitFor(() => {
         const button = screen.getByTestId('changeMediaDevice')
         fireEvent.click(button)
       })
-      expect(mockInfinitySetStream).toHaveBeenCalledTimes(1)
+      expect(mockInfinitySetStream).toHaveBeenCalledTimes(CALLED_ONCE)
     })
 
-    it('shouldn\'t do anything if not connected', async () => {
+    it("shouldn't do anything if not connected", async () => {
       render(
         <InterpretationContextProvider>
           <InterpretationContextTester />
         </InterpretationContextProvider>
       )
-      await act(async () => {
+      await waitFor(() => {
         const button = screen.getByTestId('changeMediaDevice')
         fireEvent.click(button)
       })
@@ -550,7 +654,7 @@ describe('InterpretationContext', () => {
   })
 
   describe('changeLanguage', () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       render(
         <InterpretationContextProvider>
           <InterpretationContextTester />
@@ -565,7 +669,7 @@ describe('InterpretationContext', () => {
 
     it('should have the default language to "spanish"', async () => {
       const button = screen.getByTestId('changeLanguage')
-      await act(async () => {
+      await waitFor(() => {
         fireEvent.click(button)
       })
       const language = screen.getByTestId('language')
@@ -574,7 +678,7 @@ describe('InterpretationContext', () => {
   })
 
   describe('changeDirection', () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       render(
         <InterpretationContextProvider>
           <InterpretationContextTester />
@@ -590,7 +694,7 @@ describe('InterpretationContext', () => {
     describe('InterpretationToMainRoom', () => {
       it('should change the direction to "InterpretationToMainRoom"', async () => {
         const button = screen.getByTestId('changeDirection')
-        await act(async () => {
+        await waitFor(() => {
           fireEvent.click(button)
         })
         const language = screen.getByTestId('direction')
@@ -599,19 +703,19 @@ describe('InterpretationContext', () => {
 
       it('should unmute the main room', async () => {
         const button = screen.getByTestId('changeDirection')
-        await act(async () => {
+        await waitFor(() => {
           fireEvent.click(button)
         })
-        expect(mockMainRoomSetMute).toHaveBeenCalledTimes(1)
+        expect(mockMainRoomSetMute).toHaveBeenCalledTimes(CALLED_ONCE)
         expect(mockMainRoomSetMute).toHaveBeenCalledWith(false)
       })
 
       it('should mute the interpretation room', async () => {
         const button = screen.getByTestId('changeDirection')
-        await act(async () => {
+        await waitFor(() => {
           fireEvent.click(button)
         })
-        expect(mockInfinityMute).toHaveBeenCalledTimes(1)
+        expect(mockInfinityMute).toHaveBeenCalledTimes(CALLED_ONCE)
         expect(mockInfinityMute).toHaveBeenCalledWith({ mute: true })
       })
     })
@@ -619,10 +723,10 @@ describe('InterpretationContext', () => {
     describe('MainRoomToInterpretation', () => {
       it('should change the direction to "MainRoomToInterpretation"', async () => {
         const button = screen.getByTestId('changeDirection')
-        await act(async () => {
+        await waitFor(() => {
           fireEvent.click(button)
         })
-        await act(async () => {
+        await waitFor(() => {
           fireEvent.click(button)
         })
         const language = screen.getByTestId('direction')
@@ -631,33 +735,34 @@ describe('InterpretationContext', () => {
 
       it('should mute the main room', async () => {
         const button = screen.getByTestId('changeDirection')
-        await act(async () => {
+        await waitFor(() => {
           fireEvent.click(button)
         })
-        await act(async () => {
+        await waitFor(() => {
           fireEvent.click(button)
         })
-        expect(mockMainRoomSetMute).toHaveBeenCalledTimes(2)
+        expect(mockMainRoomSetMute).toHaveBeenCalledTimes(CALLED_TWICE)
         expect(mockMainRoomSetMute).toHaveBeenCalledWith(true)
       })
 
       it('should unmute the interpretation room', async () => {
         const button = screen.getByTestId('changeDirection')
-        await act(async () => {
+        await waitFor(() => {
           fireEvent.click(button)
         })
-        await act(async () => {
+        await waitFor(() => {
           fireEvent.click(button)
         })
-        expect(mockInfinityMute).toHaveBeenCalledTimes(2)
+        expect(mockInfinityMute).toHaveBeenCalledTimes(CALLED_TWICE)
         expect(mockInfinityMute).toHaveBeenCalledWith({ mute: false })
       })
     })
   })
 
   describe('changeMute', () => {
-    beforeEach(async () => {
-      config.role = Role.Listener
+    beforeEach(() => {
+      const { Listener } = Role
+      config.role = Listener
       render(
         <InterpretationContextProvider>
           <InterpretationContextTester />
@@ -672,7 +777,7 @@ describe('InterpretationContext', () => {
 
     it('should be muted when clicked', async () => {
       const button = screen.getByTestId('changeMute')
-      await act(async () => {
+      await waitFor(() => {
         fireEvent.click(button)
       })
       const muted = screen.getByTestId('muted')
@@ -681,7 +786,7 @@ describe('InterpretationContext', () => {
   })
 
   describe('changeVolume', () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       render(
         <InterpretationContextProvider>
           <InterpretationContextTester />
@@ -695,9 +800,10 @@ describe('InterpretationContext', () => {
     })
 
     it('should change the volume when clicked', async () => {
-      newVolume = 70
+      const highVolume = 70
+      newVolume = highVolume
       const button = screen.getByTestId('changeVolume')
-      await act(async () => {
+      await waitFor(() => {
         fireEvent.click(button)
       })
       const volume = screen.getByTestId('volume')
@@ -706,71 +812,82 @@ describe('InterpretationContext', () => {
 
     describe('mainRoom volume', () => {
       it('should be 1 when volume==0%', async () => {
-        newVolume = 0
+        const minVolume = 0
+        newVolume = minVolume
         const button = screen.getByTestId('changeVolume')
-        await act(async () => {
+        await waitFor(() => {
           fireEvent.click(button)
         })
-        expect(mockMainRoomSetVolume).toHaveBeenCalledTimes(1)
-        expect(mockMainRoomSetVolume).toHaveBeenCalledWith(1)
+        expect(mockMainRoomSetVolume).toHaveBeenCalledTimes(CALLED_ONCE)
+        const expectedVolume = 1
+        expect(mockMainRoomSetVolume).toHaveBeenCalledWith(expectedVolume)
       })
 
       it('should be 1 when volume==50%', async () => {
-        newVolume = 50
+        const mediumVolume = 50
+        newVolume = mediumVolume
         const button = screen.getByTestId('changeVolume')
-        await act(async () => {
+        await waitFor(() => {
           fireEvent.click(button)
         })
-        expect(mockMainRoomSetVolume).toHaveBeenCalledTimes(1)
-        expect(mockMainRoomSetVolume).toHaveBeenCalledWith(1)
+        expect(mockMainRoomSetVolume).toHaveBeenCalledTimes(CALLED_ONCE)
+        const expectedVolume = 1
+        expect(mockMainRoomSetVolume).toHaveBeenCalledWith(expectedVolume)
       })
 
       it('should be 0 when volume==100%', async () => {
-        newVolume = 100
+        const maxVolume = 100
+        newVolume = maxVolume
         const button = screen.getByTestId('changeVolume')
-        await act(async () => {
+        await waitFor(() => {
           fireEvent.click(button)
         })
-        expect(mockMainRoomSetVolume).toHaveBeenCalledTimes(1)
-        expect(mockMainRoomSetVolume).toHaveBeenCalledWith(0)
+        expect(mockMainRoomSetVolume).toHaveBeenCalledTimes(CALLED_ONCE)
+        const expectedVolume = 0
+        expect(mockMainRoomSetVolume).toHaveBeenCalledWith(expectedVolume)
       })
     })
 
     describe('interpretation volume', () => {
       it('should be 0 when volume==0%', async () => {
-        newVolume = 0
+        const minVolume = 0
+        newVolume = minVolume
         const button = screen.getByTestId('changeVolume')
-        await act(async () => {
+        await waitFor(() => {
           fireEvent.click(button)
         })
-        expect(volumeStub).toHaveBeenCalledTimes(1)
-        expect(volumeStub).toHaveBeenCalledWith(0)
+        expect(volumeStub).toHaveBeenCalledTimes(CALLED_ONCE)
+        expect(volumeStub).toHaveBeenCalledWith(minVolume)
       })
 
       it('should be 1 when volume==50%', async () => {
-        newVolume = 50
+        const mediumVolume = 50
+        newVolume = mediumVolume
         const button = screen.getByTestId('changeVolume')
-        await act(async () => {
+        await waitFor(() => {
           fireEvent.click(button)
         })
-        expect(volumeStub).toHaveBeenCalledTimes(1)
-        expect(volumeStub).toHaveBeenCalledWith(1)
+        expect(volumeStub).toHaveBeenCalledTimes(CALLED_ONCE)
+        const expectedVolume = 1
+        expect(volumeStub).toHaveBeenCalledWith(expectedVolume)
       })
 
       it('should be 1 when volume==100%', async () => {
-        newVolume = 50
+        const mediumVolume = 50
+        newVolume = mediumVolume
         const button = screen.getByTestId('changeVolume')
-        await act(async () => {
+        await waitFor(() => {
           fireEvent.click(button)
         })
-        expect(volumeStub).toHaveBeenCalledTimes(1)
-        expect(volumeStub).toHaveBeenCalledWith(1)
+        expect(volumeStub).toHaveBeenCalledTimes(CALLED_ONCE)
+        const expectedVolume = 1
+        expect(volumeStub).toHaveBeenCalledWith(expectedVolume)
       })
     })
   })
 
   describe('minimize', () => {
-    beforeEach(async () => {
+    beforeEach(() => {
       render(
         <InterpretationContextProvider>
           <InterpretationContextTester />
@@ -785,7 +902,7 @@ describe('InterpretationContext', () => {
 
     it('should be minimized when clicked', async () => {
       const button = screen.getByTestId('minimize')
-      await act(async () => {
+      await waitFor(() => {
         fireEvent.click(button)
       })
       const minimized = screen.getByTestId('minimized')

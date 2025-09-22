@@ -4,11 +4,20 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import type { Language } from '../../types/Language'
 
 jest.mock('@pexip/components', () => ({
-  Select: (props: any) => {
+  Select: (props: {
+    isDisabled: boolean
+    isFullWidth: boolean
+    onValueChange: (value: string) => void
+  }) => {
     const { isDisabled, isFullWidth, onValueChange, ...otherProps } = props
-    return <input {...otherProps} onChange={
-      (event) => { onValueChange(event.target.value) }
-    }/>
+    return (
+      <input
+        {...otherProps}
+        onChange={(event) => {
+          onValueChange(event.target.value)
+        }}
+      />
+    )
   }
 }))
 
@@ -22,12 +31,15 @@ const spanish: Language = {
   name: 'spanish'
 }
 
-// eslint-disable-next-line no-var
-var mockLanguage = spanish
+const CALLED_ONCE = 1
+
+const mockLanguage = spanish
 const mockChangeLanguage = jest.fn()
 jest.mock('../../InterpretationContext/InterpretationContext', () => ({
   useInterpretationContext: () => ({
-    changeLanguage: (language: Language) => mockChangeLanguage(language),
+    changeLanguage: (language: Language) => {
+      mockChangeLanguage(language)
+    },
     state: {
       language: mockLanguage
     }
@@ -59,15 +71,19 @@ describe('BaseLanguageSelector', () => {
   describe('language', () => {
     it('should reflect the current language', () => {
       render(<BaseLanguageSelector />)
-      const selector: HTMLInputElement = screen.getByTestId('BaseLanguageSelector')
+      const selector: HTMLInputElement = screen.getByTestId(
+        'BaseLanguageSelector'
+      )
       expect(selector.value).toBe(spanish.code)
     })
 
     it('should call "changeLanguage" with the new language', () => {
       render(<BaseLanguageSelector />)
-      const selector: HTMLInputElement = screen.getByTestId('BaseLanguageSelector')
+      const selector: HTMLInputElement = screen.getByTestId(
+        'BaseLanguageSelector'
+      )
       fireEvent.change(selector, { target: { value: french.code } })
-      expect(mockChangeLanguage).toHaveBeenCalledTimes(1)
+      expect(mockChangeLanguage).toHaveBeenCalledTimes(CALLED_ONCE)
       expect(mockChangeLanguage).toHaveBeenCalledWith(french)
     })
   })

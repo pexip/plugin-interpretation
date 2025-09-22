@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react'
-
 import { registerPlugin } from '@pexip/plugin-api'
 import { setPlugin } from './plugin'
 import { initializeEvents } from './events'
@@ -8,16 +7,21 @@ import { initializeIFrame } from './iframe'
 import { Widget } from './Widget/Widget'
 import { useInterpretationContext } from './InterpretationContext/InterpretationContext'
 import { setInterpretationContext } from './interpretationContext'
+import { logger } from './logger'
 
-export const App = (): JSX.Element => {
+const pluginId = 'interpretation'
+const version = 0
+
+export const App = (): React.JSX.Element => {
   const interpretationContext = useInterpretationContext()
-  const { connected, minimized } = interpretationContext.state
+  const { state } = interpretationContext
+  const { connected, minimized } = state
 
   useEffect(() => {
     const bootStrap = async (): Promise<void> => {
       const plugin = await registerPlugin({
-        id: 'interpretation',
-        version: 0
+        id: pluginId,
+        version
       })
 
       setPlugin(plugin)
@@ -25,7 +29,7 @@ export const App = (): JSX.Element => {
       await initializeButton()
       initializeIFrame()
     }
-    bootStrap().catch((e) => { console.error(e) })
+    bootStrap().catch(logger.error)
   }, [])
 
   useEffect(() => {
@@ -33,11 +37,6 @@ export const App = (): JSX.Element => {
   }, [interpretationContext])
 
   return (
-    <div data-testid='App'>
-      {connected && !minimized
-        ? <Widget />
-        : null
-      }
-    </div>
+    <div data-testid="App">{connected && !minimized ? <Widget /> : null}</div>
   )
 }

@@ -1,14 +1,14 @@
 import React from 'react'
-
 import { Select } from '@pexip/components'
 import { getLanguageOptions, getLanguageByCode } from '../../language'
 import { Direction } from '../../types/Direction'
 import { useInterpretationContext } from '../../InterpretationContext/InterpretationContext'
 import clsx from 'clsx'
+import { logger } from '../../logger'
 
 import './AdvanceLanguageSelector.scss'
 
-export const AdvanceLanguageSelector = (): JSX.Element => {
+export const AdvanceLanguageSelector = (): React.JSX.Element => {
   const { changeLanguage, changeDirection, state } = useInterpretationContext()
   const { language, direction } = state
 
@@ -22,9 +22,10 @@ export const AdvanceLanguageSelector = (): JSX.Element => {
   }
 
   const handleChangeDirection = async (): Promise<void> => {
-    let newDirection = Direction.MainRoomToInterpretation
+    const { MainRoomToInterpretation, InterpretationToMainRoom } = Direction
+    let newDirection = MainRoomToInterpretation
     if (direction === Direction.MainRoomToInterpretation) {
-      newDirection = Direction.InterpretationToMainRoom
+      newDirection = InterpretationToMainRoom
     }
     await changeDirection(newDirection)
   }
@@ -32,36 +33,45 @@ export const AdvanceLanguageSelector = (): JSX.Element => {
   return (
     <div
       className={clsx('AdvanceLanguageSelector', { reversed })}
-      data-testid='AdvanceLanguageSelector'
+      data-testid="AdvanceLanguageSelector"
     >
-
-      <Select className='MainFloorSelect Select' isFullWidth
+      <Select
+        className="MainFloorSelect Select"
+        isFullWidth
         label={reversed ? 'To' : 'From'}
         value={'main'}
         isDisabled={true}
-        onValueChange={() => {}}
-        options={[{
-          id: 'main',
-          label: 'Main floor'
-        }]}
+        onValueChange={() => undefined}
+        options={[
+          {
+            id: 'main',
+            label: 'Main floor'
+          }
+        ]}
       />
 
       <button
-        className='exchange'
-        aria-label='exchange button'
-        onClick={() => { handleChangeDirection().catch((e) => { console.error(e) }) }}>
-        <img src='exchange.svg' />
+        className="exchange"
+        aria-label="exchange button"
+        onClick={() => {
+          handleChangeDirection().catch(logger.error)
+        }}
+      >
+        <img src="exchange.svg" />
       </button>
 
-      <Select className='LanguageSelect Select' isFullWidth
-        data-testid='LanguageSelect'
-        aria-label='language select'
+      <Select
+        className="LanguageSelect Select"
+        isFullWidth
+        data-testid="LanguageSelect"
+        aria-label="language select"
         label={reversed ? 'From' : 'To'}
         value={language != null ? language.code : ''}
         options={getLanguageOptions()}
-        onValueChange={(code: string) => { handleChangeLanguage(code).catch((e) => { console.error(e) }) }}
+        onValueChange={(code: string) => {
+          handleChangeLanguage(code).catch(logger.error)
+        }}
       />
-
     </div>
   )
 }

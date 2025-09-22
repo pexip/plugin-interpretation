@@ -12,7 +12,7 @@ enum InterpretationActionType {
 
 interface InterpretationAction {
   type: InterpretationActionType
-  body?: any
+  body?: unknown
 }
 
 export { InterpretationActionType }
