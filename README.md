@@ -120,6 +120,37 @@ The steps to install the interpreter branding are the following:
 
 Now you have to repeat the same process for the `listener`.
 
+### Configuration requirements starting from Infinity v37
+
+The `id` of the plugin in the manifest should be `interpretation` to support the
+new Widget concept.
+
+In addition, because of the tightened security in v37,
+`"sandboxValues": ["allow-same-origin", "allow-popups", "allow-popups-to-escape-sandbox"]`
+needs to be added to the plugin config in the manifest.
+
+More information about the above change can be found here:
+https://developer.pexip.com/docs/infinity/web/plugins/webapp-3/sandbox-security
+
+Your manifest will now look something like the following.
+
+```
+{
+  ...
+  "plugins": [
+    {
+    	"id": "interpretation",
+    	"src": "...",
+      "sandboxValues": [
+        "allow-same-origin",
+        "allow-popups",
+        "allow-popups-to-escape-sandbox"
+      ]
+    }
+  ]
+}
+```
+
 ## Run for development
 
 Once the branding is deployed we need to configure some parameters:
