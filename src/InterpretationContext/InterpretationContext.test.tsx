@@ -430,25 +430,19 @@ describe('InterpretationContext', () => {
         })
 
         it('should change the state to connected', async () => {
-          await waitFor(() => {
-            onAuthenticatedWithConferenceCallback()
-          })
+          await waitFor(onAuthenticatedWithConferenceCallback)
           const connected = screen.getByTestId('connected')
           expect(connected.innerHTML).toBe('true')
         })
 
         it('should disable the main room mute', async () => {
-          await waitFor(() => {
-            onAuthenticatedWithConferenceCallback()
-          })
+          await waitFor(onAuthenticatedWithConferenceCallback)
           expect(mockMainRoomDisableMute).toHaveBeenCalledTimes(CALLED_ONCE)
           expect(mockMainRoomDisableMute).toHaveBeenCalledWith(true)
         })
 
         it('should change the toolbar button to active', async () => {
-          await waitFor(() => {
-            onAuthenticatedWithConferenceCallback()
-          })
+          await waitFor(onAuthenticatedWithConferenceCallback)
           expect(mockSetButtonActive).toHaveBeenCalledTimes(CALLED_ONCE)
           expect(mockSetButtonActive).toHaveBeenLastCalledWith(true)
         })
@@ -456,9 +450,7 @@ describe('InterpretationContext', () => {
         describe('main room unmuted', () => {
           beforeEach(async () => {
             mockMainRoomIsMuted.mockReturnValue(false)
-            await waitFor(() => {
-              onAuthenticatedWithConferenceCallback()
-            })
+            await waitFor(onAuthenticatedWithConferenceCallback)
           })
 
           it('should mute the main room if not muted before', () => {
@@ -474,9 +466,7 @@ describe('InterpretationContext', () => {
         describe('main room muted', () => {
           beforeEach(async () => {
             mockMainRoomIsMuted.mockReturnValue(true)
-            await waitFor(() => {
-              onAuthenticatedWithConferenceCallback()
-            })
+            await waitFor(onAuthenticatedWithConferenceCallback)
           })
 
           it("shouldn't mute the main room", () => {
@@ -504,9 +494,7 @@ describe('InterpretationContext', () => {
             const button = screen.getByTestId('connect')
             fireEvent.click(button)
           })
-          await waitFor(() => {
-            onAuthenticatedWithConferenceCallback()
-          })
+          await waitFor(onAuthenticatedWithConferenceCallback)
         }
 
         it('should change the state to connected', async () => {
@@ -551,9 +539,7 @@ describe('InterpretationContext', () => {
         </InterpretationContextProvider>
       )
 
-      await waitFor(() => {
-        onAuthenticatedWithConferenceCallback()
-      })
+      await waitFor(onAuthenticatedWithConferenceCallback)
       await waitFor(() => {
         if (shouldMuteInterpretation) {
           const buttonMute = screen.getByTestId('changeMute')
@@ -614,7 +600,8 @@ describe('InterpretationContext', () => {
       const shouldMuteInterpretation = true
       await renderDisconnectionTest(shouldMuteInterpretation)
       expect(mockMainRoomSetMute).toHaveBeenCalledTimes(CALLED_ONCE)
-      expect(mockMainRoomSetMute).toHaveBeenCalledWith(true)
+      const muted = screen.getByTestId('muted')
+      expect(muted.innerHTML).toBe('true')
     })
   })
 
@@ -629,9 +616,7 @@ describe('InterpretationContext', () => {
         const button = screen.getByTestId('connect')
         fireEvent.click(button)
       })
-      await waitFor(() => {
-        onAuthenticatedWithConferenceCallback()
-      })
+      await waitFor(onAuthenticatedWithConferenceCallback)
       await waitFor(() => {
         const button = screen.getByTestId('changeMediaDevice')
         fireEvent.click(button)
@@ -668,12 +653,14 @@ describe('InterpretationContext', () => {
     })
 
     it('should have the default language to "spanish"', async () => {
-      const button = screen.getByTestId('changeLanguage')
       await waitFor(() => {
+        const button = screen.getByTestId('changeLanguage')
         fireEvent.click(button)
       })
-      const language = screen.getByTestId('language')
-      expect(language.innerHTML).toBe(JSON.stringify(spanish))
+      await waitFor(() => {
+        const language = screen.getByTestId('language')
+        expect(language.innerHTML).toBe(JSON.stringify(spanish))
+      })
     })
   })
 
@@ -693,12 +680,14 @@ describe('InterpretationContext', () => {
 
     describe('InterpretationToMainRoom', () => {
       it('should change the direction to "InterpretationToMainRoom"', async () => {
-        const button = screen.getByTestId('changeDirection')
         await waitFor(() => {
+          const button = screen.getByTestId('changeDirection')
           fireEvent.click(button)
         })
-        const language = screen.getByTestId('direction')
-        expect(language.innerHTML).toBe(Direction.InterpretationToMainRoom)
+        await waitFor(() => {
+          const language = screen.getByTestId('direction')
+          expect(language.innerHTML).toBe(Direction.InterpretationToMainRoom)
+        })
       })
 
       it('should unmute the main room', async () => {
@@ -715,18 +704,18 @@ describe('InterpretationContext', () => {
         await waitFor(() => {
           fireEvent.click(button)
         })
-        expect(mockInfinityMute).toHaveBeenCalledTimes(CALLED_ONCE)
-        expect(mockInfinityMute).toHaveBeenCalledWith({ mute: true })
+        await waitFor(() => {
+          expect(mockInfinityMute).toHaveBeenCalledTimes(CALLED_ONCE)
+          expect(mockInfinityMute).toHaveBeenCalledWith({ mute: true })
+        })
       })
     })
 
     describe('MainRoomToInterpretation', () => {
       it('should change the direction to "MainRoomToInterpretation"', async () => {
-        const button = screen.getByTestId('changeDirection')
         await waitFor(() => {
+          const button = screen.getByTestId('changeDirection')
           fireEvent.click(button)
-        })
-        await waitFor(() => {
           fireEvent.click(button)
         })
         const language = screen.getByTestId('direction')
@@ -776,12 +765,14 @@ describe('InterpretationContext', () => {
     })
 
     it('should be muted when clicked', async () => {
-      const button = screen.getByTestId('changeMute')
       await waitFor(() => {
+        const button = screen.getByTestId('changeMute')
         fireEvent.click(button)
       })
-      const muted = screen.getByTestId('muted')
-      expect(muted.innerHTML).toBe('true')
+      await waitFor(() => {
+        const muted = screen.getByTestId('muted')
+        expect(muted.innerHTML).toBe('true')
+      })
     })
   })
 
