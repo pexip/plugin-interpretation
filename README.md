@@ -43,7 +43,6 @@ Specially if the user is a **interpreter** or a **listener**, but there is a
 
 - Once the user is connected, they will see a different interface depending on
   the role:
-
   - The **interpreter** will see a dialog with the following buttons:
     - Drag and drop on the top-left corner.
     - Minimize in the top-right corner.
@@ -59,7 +58,6 @@ Specially if the user is a **interpreter** or a **listener**, but there is a
   ![interpreter](./images/interpreter.png)
 
   </div>
-
   - The **listener** will have a different interface:
     - Drag and drop on the top-left corner.
     - Minimize in the top-right corner.
@@ -126,8 +124,8 @@ The `id` of the plugin in the manifest should be `interpretation` to support the
 new Widget concept.
 
 In addition, because of the tightened security in v37,
-`"sandboxValues": ["allow-same-origin", "allow-popups", "allow-popups-to-escape-sandbox"]`
-needs to be added to the plugin config in the manifest.
+`"sandboxValues": ["allow-same-origin"]` needs to be added to the plugin config
+in the manifest.
 
 More information about the above change can be found here:
 https://developer.pexip.com/docs/infinity/web/plugins/webapp-3/sandbox-security
@@ -141,11 +139,7 @@ Your manifest will now look something like the following.
     {
     	"id": "interpretation",
     	"src": "...",
-      "sandboxValues": [
-        "allow-same-origin",
-        "allow-popups",
-        "allow-popups-to-escape-sandbox"
-      ]
+      "sandboxValues": ["allow-same-origin"]
     }
   ]
 }
@@ -303,7 +297,6 @@ the interpretation:
   In this case the interpreter can change the direction of the translation. He
   can translate from the Main Room to the Interpretation Room and the other way
   around. In this case we have two other behavior based on the direction:
-
   - **Main Room -> Interpretation Room:**
 
     | Direction | Role        | Main Room | Interpretation Room |

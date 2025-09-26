@@ -22,11 +22,7 @@
   "plugins": [
     {
       "src": "https://localhost:5174",
-      "sandboxValues": [
-        "allow-same-origin",
-        "allow-popups",
-        "allow-popups-to-escape-sandbox"
-      ]
+      "sandboxValues": ["allow-same-origin"]
     }
   ]
 }
