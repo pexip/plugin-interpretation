@@ -102,24 +102,22 @@ const getToolbarButton = (): HTMLButtonElement | null => {
   const button =
     parent.document.querySelector(toolbarUnmutedSelector) ??
     parent.document.querySelector(toolbarMutedSelector)
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- no-unsafe-argument
-  return button as HTMLButtonElement
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- The querySelector ensures is a button
+  return button as HTMLButtonElement | null
 }
 
 const getFoldedSelfViewButton = (): HTMLButtonElement | null => {
   const button = parent.document.querySelector(foldedSelViewSelector)
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- no-unsafe-argument
-  return button as HTMLButtonElement
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- The querySelector ensures is a button
+  return button as HTMLButtonElement | null
 }
 
 const getSelfViewButton = (): HTMLButtonElement | null => {
   const qualityButton = parent.document.querySelector(qualitySelector)
-  if (qualityButton != null) {
-    const button = qualityButton.parentNode?.querySelector('button:first-child')
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- no-unsafe-argument
-    return button as HTMLButtonElement
-  }
-  return null
+  const { parentNode } = qualityButton ?? {}
+  const button = parentNode?.querySelector('button:first-child') ?? null
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- The querySelector ensures is a button
+  return button as HTMLButtonElement | null
 }
 
 export const MainRoomMuteButtons = {
