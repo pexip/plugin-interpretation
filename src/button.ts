@@ -3,7 +3,7 @@ import { showInterpreterForm } from './forms'
 import type { Button, ToolbarButtonPayload } from '@pexip/plugin-api'
 import { getInterpretationContext } from './interpretationContext'
 
-let button: Button<'toolbar'>
+let button: Button<'toolbar'> | null = null
 
 const buttonPayload: ToolbarButtonPayload = {
   position: 'toolbar',
@@ -19,9 +19,14 @@ export const initializeButton = async (): Promise<void> => {
 }
 
 export const setButtonActive = async (active: boolean): Promise<void> => {
-  await button.update(Object.assign(buttonPayload, {
-    isActive: active
-  }))
+  if (button == null) {
+    throw new Error('Button not initialized')
+  }
+  await button.update(
+    Object.assign(buttonPayload, {
+      isActive: active
+    })
+  )
 }
 
 const handleClick = async (): Promise<void> => {

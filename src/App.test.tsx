@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { type ReactElement } from 'react'
 import { render, screen } from '@testing-library/react'
 import { App } from './App'
 
@@ -7,17 +7,21 @@ jest.mock('@pexip/plugin-api', () => ({
 }))
 
 jest.mock('@pexip/components', () => ({
-  ThemeProvider: (props: any) => <div data-testid='App'>{props.children}</div>
+  ThemeProvider: (props: { children: ReactElement }) => (
+    <div data-testid="App">{props.children}</div>
+  )
 }))
 
 jest.mock('./Widget/Widget', () => ({
-  Widget: () => <div data-testid='Widget'></div>
+  Widget: () => <div data-testid="Widget"></div>
 }))
 
 jest.mock('./button', () => ({
   initializeButton: jest.fn(),
   refreshContextButton: jest.fn(),
-  setButtonActive: jest.fn(async () => { await Promise.resolve() })
+  setButtonActive: jest.fn(async () => {
+    await Promise.resolve()
+  })
 }))
 
 jest.mock('./events', () => ({
@@ -29,10 +33,8 @@ jest.mock('./config', () => ({
   config: jest.fn()
 }))
 
-// eslint-disable-next-line no-var
-var mockConnected = false
-// eslint-disable-next-line no-var
-var mockMinimized = false
+let mockConnected = false
+let mockMinimized = false
 jest.mock('./InterpretationContext/InterpretationContext', () => ({
   useInterpretationContext: () => ({
     state: {
@@ -49,7 +51,7 @@ describe('App', () => {
     expect(app).toBeInTheDocument()
   })
 
-  it('shouldn\'t display the Widget on load', () => {
+  it("shouldn't display the Widget on load", () => {
     mockConnected = false
     mockMinimized = false
     render(<App />)
@@ -57,7 +59,7 @@ describe('App', () => {
     expect(widget).not.toBeInTheDocument()
   })
 
-  it('shouldn\'t display the Widget if it\'s connected and minimized', () => {
+  it("shouldn't display the Widget if it's connected and minimized", () => {
     mockConnected = true
     mockMinimized = true
     render(<App />)
@@ -65,7 +67,7 @@ describe('App', () => {
     expect(widget).not.toBeInTheDocument()
   })
 
-  it('shouldn\'t display the Widget if is not connected connected and is minimized', () => {
+  it("shouldn't display the Widget if is not connected connected and is minimized", () => {
     mockConnected = false
     mockMinimized = true
     render(<App />)
@@ -73,7 +75,7 @@ describe('App', () => {
     expect(widget).not.toBeInTheDocument()
   })
 
-  it('should display the Widget once it\'s connected and not minimized', () => {
+  it("should display the Widget once it's connected and not minimized", () => {
     mockConnected = true
     mockMinimized = false
     render(<App />)

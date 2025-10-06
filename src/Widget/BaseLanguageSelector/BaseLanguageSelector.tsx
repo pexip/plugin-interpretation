@@ -1,12 +1,12 @@
 import React from 'react'
-
 import { getLanguageByCode, getLanguageOptions } from '../../language'
 import { Select } from '@pexip/components'
 import { useInterpretationContext } from '../../InterpretationContext/InterpretationContext'
+import { logger } from '../../logger'
 
 import './BaseLanguageSelector.scss'
 
-export const BaseLanguageSelector = (): JSX.Element => {
+export const BaseLanguageSelector = (): React.JSX.Element => {
   const { changeLanguage, state } = useInterpretationContext()
   const { language } = state
 
@@ -18,12 +18,16 @@ export const BaseLanguageSelector = (): JSX.Element => {
   }
 
   return (
-    <Select className='BaseLanguageSelector' isFullWidth
-      data-testid='BaseLanguageSelector'
+    <Select
+      className="BaseLanguageSelector"
+      isFullWidth
+      data-testid="BaseLanguageSelector"
       label={''}
       value={language?.code ?? ''}
       options={getLanguageOptions()}
-      onValueChange={(code: string) => { handleChangeLanguage(code).catch((e) => { console.error(e) }) }}
+      onValueChange={(code: string) => {
+        handleChangeLanguage(code).catch(logger.error)
+      }}
     />
   )
 }

@@ -4,10 +4,10 @@ import type { Role } from './types/Role'
 interface Config {
   role: Role
   reusePin: boolean
-  interpreter: {
+  interpreter?: {
     allowChangeDirection: boolean
   }
-  listener: {
+  listener?: {
     mainFloorVolume: number
     speakToInterpretationRoom: boolean
   }
@@ -15,8 +15,7 @@ interface Config {
 }
 
 const response = await fetch('./config.json')
-const config: Config = await response.json()
+// eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- no-unsafe-argument
+const config: Config = (await response.json()) as Config
 
-export {
-  config
-}
+export { config }

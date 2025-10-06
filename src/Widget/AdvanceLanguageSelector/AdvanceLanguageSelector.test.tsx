@@ -5,11 +5,20 @@ import type { Language } from '../../types/Language'
 import { Direction } from '../../types/Direction'
 
 jest.mock('@pexip/components', () => ({
-  Select: (props: any) => {
+  Select: (props: {
+    isDisabled: boolean
+    isFullWidth: boolean
+    onValueChange: (value: string) => void
+  }) => {
     const { isDisabled, isFullWidth, onValueChange, ...otherProps } = props
-    return <input {...otherProps} onChange={
-      (event) => { onValueChange(event.target.value) }
-    }/>
+    return (
+      <input
+        {...otherProps}
+        onChange={(event) => {
+          onValueChange(event.target.value)
+        }}
+      />
+    )
   }
 }))
 
@@ -23,16 +32,21 @@ const spanish: Language = {
   name: 'spanish'
 }
 
-// eslint-disable-next-line no-var
-var mockLanguage = spanish
-// eslint-disable-next-line no-var
-var mockDirection = Direction.InterpretationToMainRoom
+const CALLED_ONCE = 1
+
+const mockLanguage = spanish
+const { InterpretationToMainRoom } = Direction
+const mockDirection = InterpretationToMainRoom
 const mockChangeLanguage = jest.fn()
 const mockChangeDirection = jest.fn()
 jest.mock('../../InterpretationContext/InterpretationContext', () => ({
   useInterpretationContext: () => ({
-    changeLanguage: (language: Language) => mockChangeLanguage(language),
-    changeDirection: (direction: Direction) => mockChangeDirection(direction),
+    changeLanguage: (language: Language) => {
+      mockChangeLanguage(language)
+    },
+    changeDirection: (direction: Direction) => {
+      mockChangeDirection(direction)
+    },
     state: {
       language: mockLanguage,
       direction: mockDirection
@@ -73,7 +87,7 @@ describe('AdvanceLanguageSelector', () => {
       render(<AdvanceLanguageSelector />)
       const select: HTMLInputElement = screen.getByTestId('LanguageSelect')
       fireEvent.change(select, { target: { value: french.code } })
-      expect(mockChangeLanguage).toHaveBeenCalledTimes(1)
+      expect(mockChangeLanguage).toHaveBeenCalledTimes(CALLED_ONCE)
       expect(mockChangeLanguage).toHaveBeenCalledWith(french)
     })
   })
@@ -89,8 +103,10 @@ describe('AdvanceLanguageSelector', () => {
       render(<AdvanceLanguageSelector />)
       const button = screen.getByRole('button')
       fireEvent.click(button)
-      expect(mockChangeDirection).toHaveBeenCalledTimes(1)
-      expect(mockChangeDirection).toHaveBeenCalledWith(Direction.MainRoomToInterpretation)
+      expect(mockChangeDirection).toHaveBeenCalledTimes(CALLED_ONCE)
+      expect(mockChangeDirection).toHaveBeenCalledWith(
+        Direction.MainRoomToInterpretation
+      )
     })
   })
 })

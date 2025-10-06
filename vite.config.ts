@@ -31,23 +31,26 @@ export default defineConfig({
   },
   publicDir: config.publicDir,
   server: {
-    open: config.brandingPath + '/',
+    open: '/webapp3/',
     port: config.port,
+    cors: true,
     proxy: {
-      [config.brandingPath]: {
+      '/webapp3/branding/manifest.json': {
+        target: 'https://localhost:' + config.port,
+        secure: false,
+        rewrite: (path) =>
+          path.replace(/^\/webapp3\/branding\/manifest.json$/, '/manifest.json')
+      },
+      '/webapp3': {
         target: viteConfig.infinityUrl,
-        changeOrigin: true,
-        secure: false
+        secure: false,
+        rewrite: (path) => path.replace(/^\/webapp3\/(.*)$/, '/webapp3/$1')
       },
       '/api': {
         target: viteConfig.infinityUrl,
-        changeOrigin: true,
         secure: false
       }
     }
   },
-  plugins: [
-    mkcert(),
-    react()
-  ]
+  plugins: [mkcert(), react()]
 })

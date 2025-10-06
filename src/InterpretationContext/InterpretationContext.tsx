@@ -22,8 +22,14 @@ import { getUser } from '../user'
 import { getMainConferenceAlias } from '../conference'
 import { MainRoom } from '../main-room'
 import { setButtonActive } from '../button'
+import { logger } from '../logger'
 
-const InterpretationContext = createContext<InterpretationContextType | null>(null)
+const batchScheduleTimeoutMS = 500
+const batchBufferSize = 10
+
+const InterpretationContext = createContext<InterpretationContextType | null>(
+  null
+)
 
 export interface InterpretationContextType {
   setPin: (pin: string) => void
@@ -38,21 +44,23 @@ export interface InterpretationContextType {
   state: InterpretationState
 }
 
-let infinityClient: InfinityClient
+let infinityClient: InfinityClient | undefined = undefined
 
 const audio: HTMLAudioElement = new Audio()
 audio.autoplay = true
 
-let pin: string | null = null
-let mediaStream: MediaStream | undefined
+let pin: string | undefined = undefined
+let mediaStream: MediaStream | undefined = undefined
 
 export const InterpretationContextProvider = (props: {
-  children?: JSX.Element
-}): JSX.Element => {
+  children?: React.JSX.Element
+}): React.JSX.Element => {
+  const maxVolume = 100
+  const minVolume = 0
   const volume: number =
     config.role === Role.Interpreter
-      ? 100
-      : config.listener?.mainFloorVolume ?? 0
+      ? maxVolume
+      : (config.listener?.mainFloorVolume ?? minVolume)
   const initialState: InterpretationState = {
     role: config.role,
     connected: false,
@@ -75,8 +83,8 @@ export const InterpretationContextProvider = (props: {
     infinityClient = createInfinityClient(clientSignals, callSignals)
 
     const username = getUser().displayName ?? getUser().uuid
-    let roleTag: string
-    let callType: ClientCallType
+    let roleTag = ''
+    let callType: ClientCallType = ClientCallType.Audio
 
     if (!state.connected) {
       dispatch({
@@ -87,26 +95,37 @@ export const InterpretationContextProvider = (props: {
       })
     }
 
+    const { Audio, AudioSendOnly, AudioRecvOnly } = ClientCallType
     if (state.role === Role.Interpreter) {
       roleTag = 'Interpreter'
       const constraints = MainRoom.getMediaConstraints()
       mediaStream = await getMediaStream(constraints)
-      const shouldSendReceive = config.interpreter?.allowChangeDirection
+      const { interpreter } = config
+      let shouldSendReceive = false
+      if (interpreter != null) {
+        const { allowChangeDirection } = interpreter
+        shouldSendReceive = allowChangeDirection
+      }
       if (shouldSendReceive) {
-        callType = ClientCallType.Audio
+        callType = Audio
       } else {
-        callType = ClientCallType.AudioSendOnly
+        callType = AudioSendOnly
       }
     } else {
       roleTag = 'Listener'
       mediaStream = undefined
-      const shouldSendReceive = config.listener?.speakToInterpretationRoom
+      const { listener } = config
+      let shouldSendReceive = false
+      if (listener != null) {
+        const { speakToInterpretationRoom } = listener
+        shouldSendReceive = speakToInterpretationRoom
+      }
       if (shouldSendReceive) {
         const constraints = MainRoom.getMediaConstraints()
         mediaStream = await getMediaStream(constraints)
-        callType = ClientCallType.Audio
+        callType = Audio
       } else {
-        callType = ClientCallType.AudioRecvOnly
+        callType = AudioRecvOnly
       }
     }
 
@@ -140,9 +159,10 @@ export const InterpretationContextProvider = (props: {
   }
 
   const disconnect = async (): Promise<void> => {
-    await infinityClient.disconnect({ reason: 'User initiated disconnect' })
+    await infinityClient?.disconnect({ reason: 'User initiated disconnect' })
     audio.pause()
-    MainRoom.setVolume(1)
+    const maxVolume = 1
+    MainRoom.setVolume(maxVolume)
     MainRoom.disableMute(false)
     MainRoom.setMute(state.muted)
     await setButtonActive(false)
@@ -151,18 +171,22 @@ export const InterpretationContextProvider = (props: {
     })
   }
 
-  const changeMediaDevice = async (constraints: MediaTrackConstraints): Promise<void> => {
-    if (state.connected &&
-      (state.role === Role.Interpreter || config.listener?.speakToInterpretationRoom)
+  const changeMediaDevice = async (
+    constraints: MediaTrackConstraints
+  ): Promise<void> => {
+    if (
+      state.connected &&
+      (state.role === Role.Interpreter ||
+        (config.listener?.speakToInterpretationRoom ?? false))
     ) {
       stopStream(mediaStream)
       mediaStream = await getMediaStream(constraints)
-      infinityClient.setStream(mediaStream)
+      infinityClient?.setStream(mediaStream)
     }
   }
 
   const changeLanguage = async (language: Language): Promise<void> => {
-    await infinityClient.disconnect({ reason: 'User initiated disconnect' })
+    await infinityClient?.disconnect({ reason: 'User initiated disconnect' })
     MainRoom.setMute(state.muted)
     await connect(language)
     dispatch({
@@ -176,10 +200,10 @@ export const InterpretationContextProvider = (props: {
   const changeDirection = async (direction: Direction): Promise<void> => {
     if (direction === Direction.MainRoomToInterpretation) {
       MainRoom.setMute(true)
-      await infinityClient.mute({ mute: state.muted })
+      await infinityClient?.mute({ mute: state.muted })
     } else {
       MainRoom.setMute(state.muted)
-      await infinityClient.mute({ mute: true })
+      await infinityClient?.mute({ mute: true })
     }
     dispatch({
       type: InterpretationActionType.ChangedDirection,
@@ -191,7 +215,7 @@ export const InterpretationContextProvider = (props: {
 
   const changeMute = async (muted: boolean): Promise<void> => {
     if (state.direction === Direction.MainRoomToInterpretation) {
-      await infinityClient.mute({ mute: muted })
+      await infinityClient?.mute({ mute: muted })
     } else {
       MainRoom.setMute(muted)
     }
@@ -205,8 +229,17 @@ export const InterpretationContextProvider = (props: {
   }
 
   const changeVolume = (volume: number): void => {
-    const mainRoomVolume = Math.min(2 * (1 - volume / 100), 1)
-    const interpretationVolume = Math.min(volume * 2 / 100, 1)
+    const scale = 2
+    const maxVolume = 1
+    const maxVolumePercentage = 100
+    const mainRoomVolume = Math.min(
+      scale * (maxVolume - volume / maxVolumePercentage),
+      maxVolume
+    )
+    const interpretationVolume = Math.min(
+      (volume * scale) / maxVolumePercentage,
+      maxVolume
+    )
     MainRoom.setVolume(mainRoomVolume)
     audio.volume = interpretationVolume
     dispatch({
@@ -226,34 +259,43 @@ export const InterpretationContextProvider = (props: {
     })
   }
 
-  const getMediaStream = async (constraints?: MediaTrackConstraints): Promise<MediaStream> => {
-    let stream: MediaStream
+  const getMediaStream = async (
+    constraints?: MediaTrackConstraints
+  ): Promise<MediaStream> => {
+    let stream: MediaStream | null = null
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         audio: constraints ?? true,
         video: false
       })
-      const audioTracks = stream.getAudioTracks()
-      console.log('Using audio device: ' + audioTracks[0].label)
+      const [audioTrack] = stream.getAudioTracks()
+      logger.info('Using audio device: ' + audioTrack.label)
     } catch (e) {
-      console.error(e)
+      logger.error(e)
       const plugin = getPlugin()
-      await plugin.ui.showToast({ message: 'Interpretation cannot access the microphone' })
+      await plugin.ui.showToast({
+        message: 'Interpretation cannot access the microphone'
+      })
       throw e
     }
     return stream
   }
 
   const stopStream = (stream: MediaStream | undefined): void => {
-    stream?.getTracks().forEach((track) => { track.stop() })
+    stream?.getTracks().forEach((track) => {
+      track.stop()
+    })
   }
 
   const initializeInfinityClientSignals = (): InfinitySignals => {
-    const signals = createInfinityClientSignals([])
+    const signals = createInfinityClientSignals([], {
+      batchScheduleTimeoutMS,
+      batchBufferSize
+    })
     signals.onPinRequired.add(handlePin)
     signals.onAuthenticatedWithConference.add(handleConnected)
     signals.onError.add(async (options) => {
-      pin = null
+      pin = undefined
       await showErrorPrompt(options)
     })
     return signals
@@ -261,12 +303,20 @@ export const InterpretationContextProvider = (props: {
 
   const initializeInfinityCallSignals = (): CallSignals => {
     const signals = createCallSignals([])
-    signals.onRemoteStream.add((stream) => { audio.srcObject = stream })
+    signals.onRemoteStream.add((stream) => {
+      audio.srcObject = stream
+    })
     return signals
   }
 
-  const handlePin = async ({ hasHostPin, hasGuestPin }: { hasHostPin: boolean, hasGuestPin: boolean }): Promise<void> => {
-    const role = config.role
+  const handlePin = async ({
+    hasHostPin,
+    hasGuestPin
+  }: {
+    hasHostPin: boolean
+    hasGuestPin: boolean
+  }): Promise<void> => {
+    const { role } = config
     if (role === Role.Interpreter && hasHostPin) {
       await showPinForm()
     }
@@ -274,7 +324,7 @@ export const InterpretationContextProvider = (props: {
       if (hasGuestPin) {
         await showPinForm()
       } else {
-        if (state.language != null && role != null) {
+        if (state.language != null) {
           setPin('')
           await connect(state.language)
         }
@@ -283,10 +333,10 @@ export const InterpretationContextProvider = (props: {
   }
 
   const handleConnected = async (): Promise<void> => {
-    const showListenerMuteButton = config.listener?.speakToInterpretationRoom
-    if (state.role === Role.Interpreter ||
-      (state.role === Role.Listener && showListenerMuteButton)
-    ) {
+    const showListenerMuteButton =
+      config.listener?.speakToInterpretationRoom ?? false
+    const { Interpreter } = Role
+    if (state.role === Interpreter || showListenerMuteButton) {
       if (MainRoom.isMuted()) {
         await changeMute(true)
       } else {

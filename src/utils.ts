@@ -1,8 +1,8 @@
 export const isSameDomain = (): boolean => {
   // Check if the plugin is served from the same domain as Web App 3
-  let sameDomain: boolean = true
+  let sameDomain = true
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- no-throw-literal
     parent.document
   } catch (e) {
     sameDomain = false
@@ -11,5 +11,7 @@ export const isSameDomain = (): boolean => {
 }
 
 export const capitalizeFirstLetter = (value: string): string => {
-  return value.charAt(0).toUpperCase() + value.slice(1)
+  const firstIndex = 0
+  const secondIndex = 1
+  return value.charAt(firstIndex).toUpperCase() + value.slice(secondIndex)
 }
