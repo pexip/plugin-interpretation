@@ -1,21 +1,22 @@
 import { getInterpretationContext } from './interpretationContext'
 import { getLanguageByCode, getLanguageOptions } from './language'
 import { getPlugin } from './plugin'
+import { t } from 'i18next'
 
-export const showInterpreterForm = async (): Promise<void> => {
+export const showSelectLanguageForm = async (): Promise<void> => {
   const plugin = getPlugin()
 
   const input = await plugin.ui.showForm({
-    title: 'Select language',
+    title: t('selectLanguageForm.title', 'Select Language'),
     form: {
       elements: {
         language: {
-          name: 'Language',
+          name: t('selectLanguageForm.language', 'Language'),
           type: 'select',
           options: getLanguageOptions()
         }
       },
-      submitBtnTitle: 'Join'
+      submitBtnTitle: t('join', 'Join')
     }
   })
   const language = getLanguageByCode(input.language)
@@ -28,17 +29,17 @@ export const showPinForm = async (): Promise<void> => {
   const plugin = getPlugin()
 
   const input = await plugin.ui.showForm({
-    title: 'PIN Required',
+    title: t('pinForm.title', 'Enter PIN'),
     form: {
       elements: {
         pin: {
           name: 'PIN',
           type: 'password',
-          placeholder: 'Enter PIN',
+          placeholder: t('pinForm.placeholder', 'Enter PIN'),
           isOptional: false
         }
       },
-      submitBtnTitle: 'Join'
+      submitBtnTitle: t('pinForm.join', 'Join')
     }
   })
 

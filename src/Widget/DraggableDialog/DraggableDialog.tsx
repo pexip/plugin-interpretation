@@ -4,6 +4,7 @@ import { moveIFrame, toggleIFramePointerEvents } from '../../iframe'
 import { showDisconnectPrompt } from '../../prompts'
 import { useInterpretationContext } from '../../InterpretationContext/InterpretationContext'
 import { logger } from '../../logger'
+import { useTranslation } from 'react-i18next'
 
 import './DraggableDialog.scss'
 
@@ -16,6 +17,8 @@ export const DraggableDialog = (
   props: DraggableDialogProps
 ): React.JSX.Element => {
   const { minimize } = useInterpretationContext()
+
+  const { t } = useTranslation()
 
   const refDragButton = useRef<HTMLButtonElement>(null)
 
@@ -58,7 +61,7 @@ export const DraggableDialog = (
 
         <span className="Title">{props.title}</span>
 
-        <Tooltip text="Hide dialog" position="bottomLeft">
+        <Tooltip text={t('hideDialog', 'Hide dialog')} position="bottomLeft">
           <Icon
             className="Minimize"
             source={IconTypes.IconMinus}
@@ -68,7 +71,10 @@ export const DraggableDialog = (
           />
         </Tooltip>
 
-        <Tooltip text="Leave interpretation" position="bottomLeft">
+        <Tooltip
+          text={t('disconnectPrompt.title', 'Leave interpretation')}
+          position="bottomLeft"
+        >
           <Icon
             className="Close"
             source={IconTypes.IconClose}

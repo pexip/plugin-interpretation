@@ -1,17 +1,21 @@
 import { getInterpretationContext } from './interpretationContext'
 import { getPlugin } from './plugin'
 import type { ExtendedInfinityErrorCode } from '@pexip/infinity'
+import { t } from 'i18next'
 
 export const showDisconnectPrompt = async (): Promise<void> => {
   const plugin = getPlugin()
-  const primaryAction = 'Leave'
+  const primaryAction = t('disconnectPrompt.leave', 'Leave')
 
   const prompt = await plugin.ui.addPrompt({
-    title: 'Leave Interpretation',
-    description: 'Do you want to leave the interpretation?',
+    title: t('disconnectPrompt.title', 'Leave interpretation'),
+    description: t(
+      'disconnectPrompt.content',
+      'Are you sure you want to leave the interpretation session?'
+    ),
     prompt: {
       primaryAction,
-      secondaryAction: 'Cancel'
+      secondaryAction: t('disconnectPrompt.stay', 'Stay')
     }
   })
 
@@ -23,17 +27,20 @@ export const showDisconnectPrompt = async (): Promise<void> => {
   })
 }
 
-export const showErrorPrompt = async ({ error, errorCode }: {
+export const showErrorPrompt = async ({
+  error,
+  errorCode
+}: {
   error: string
   errorCode: ExtendedInfinityErrorCode
 }): Promise<void> => {
   const plugin = getPlugin()
 
   await plugin.ui.showPrompt({
-    title: 'Error',
+    title: t('errorPrompt.title', 'Error'),
     description: error,
     prompt: {
-      primaryAction: 'Close'
+      primaryAction: t('errorPrompt.close', 'Close')
     }
   })
 }

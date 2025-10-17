@@ -4,6 +4,7 @@ import { getInterpretationContext } from './interpretationContext'
 import { MainRoom } from './main-room'
 import { getPlugin } from './plugin'
 import { setUser } from './user'
+import i18n from 'i18next'
 
 interface AuthenticatedWithConferenceEvent {
   conferenceAlias: string
@@ -17,6 +18,9 @@ export const initializeEvents = (): void => {
   plugin.events.me.add(handleMe)
   plugin.events.participantsActivities.add(handleParticipantsActivities)
   plugin.events.disconnected.add(handleDisconnected)
+  plugin.events.languageSelect.add(async (language: string): Promise<void> => {
+    await i18n.changeLanguage(language)
+  })
 }
 
 const handleAuthenticatedWithConference = (

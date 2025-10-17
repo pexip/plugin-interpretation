@@ -1,14 +1,15 @@
 import { getPlugin } from './plugin'
-import { showInterpreterForm } from './forms'
+import { showSelectLanguageForm } from './forms'
 import type { Button, ToolbarButtonPayload } from '@pexip/plugin-api'
 import { getInterpretationContext } from './interpretationContext'
+import { t } from 'i18next'
 
 let button: Button<'toolbar'> | null = null
 
 const buttonPayload: ToolbarButtonPayload = {
   position: 'toolbar',
   icon: 'IconSupport',
-  tooltip: 'Interpretation',
+  tooltip: t('interpretation', 'Interpretation'),
   roles: ['chair', 'guest']
 }
 
@@ -16,6 +17,12 @@ export const initializeButton = async (): Promise<void> => {
   const plugin = getPlugin()
   button = await plugin.ui.addButton(buttonPayload)
   button.onClick.add(handleClick)
+  plugin.events.languageSelect.add(async () => {
+    await button?.update({
+      ...buttonPayload,
+      tooltip: t('interpretation', 'Interpretation')
+    })
+  })
 }
 
 export const setButtonActive = async (active: boolean): Promise<void> => {
@@ -36,6 +43,6 @@ const handleClick = async (): Promise<void> => {
   if (connected) {
     minimize(false)
   } else {
-    await showInterpreterForm()
+    await showSelectLanguageForm()
   }
 }

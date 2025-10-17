@@ -5,6 +5,7 @@ import { capitalizeFirstLetter } from '../../utils'
 import { Direction } from '../../types/Direction'
 import clsx from 'clsx'
 import { logger } from '../../logger'
+import { useTranslation } from 'react-i18next'
 
 import './MuteButton.scss'
 
@@ -14,10 +15,12 @@ export const MuteButton = (): React.JSX.Element => {
   const { state, changeMute } = interpretationContext
   const { muted, language, direction } = state
 
+  const { t } = useTranslation()
+
   const label =
     direction === Direction.MainRoomToInterpretation
       ? capitalizeFirstLetter(language?.name ?? '')
-      : 'Main floor'
+      : t('mainFloor', 'Main floor')
 
   return (
     <Button
@@ -34,7 +37,7 @@ export const MuteButton = (): React.JSX.Element => {
         }
       />
       <span>
-        {muted ? 'Unmute' : 'Mute'} {label}
+        {muted ? t('unmute', 'Unmute') : t('mute', 'Mute')} {label}
       </span>
     </Button>
   )

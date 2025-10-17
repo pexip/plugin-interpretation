@@ -8,10 +8,13 @@ import { DraggableDialog } from './DraggableDialog/DraggableDialog'
 import { MuteButton } from './MuteButton/MuteButton'
 import { useInterpretationContext } from '../InterpretationContext/InterpretationContext'
 import { config } from '../config'
+import { useTranslation } from 'react-i18next'
 
 export const Widget = (): React.JSX.Element => {
   const { state } = useInterpretationContext()
   const { role } = state
+
+  const { t } = useTranslation()
 
   const { interpreter, listener } = config
 
@@ -32,7 +35,7 @@ export const Widget = (): React.JSX.Element => {
   showBaseLanguageSelector = !showAdvanceLanguageSelector
 
   return (
-    <DraggableDialog title="Interpretation">
+    <DraggableDialog title={t('interpretation', 'Interpretation')}>
       <div className="Container">
         {role === Role.Interpreter && (
           <>

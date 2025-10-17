@@ -1,0 +1,29 @@
+{
+  "from": "from",
+  "to": "to",
+  "interpretation": "Interpretation",
+  "interpreter": "Interpreter",
+  "mainFloor": "Main floor",
+  "mute": "Mute",
+  "unmute": "Unmute",
+  "join": "Join",
+  "hideDialog": "Hide dialog",
+  "selectLanguageForm": {
+    "title": "Select language",
+    "language": "Language"
+  },
+  "pinForm": {
+    "title": "PIN Required",
+    "placeholder": "Enter PIN"
+  },
+  "disconnectPrompt": {
+    "title": "Leave interpretation",
+    "content": "Are you sure you want to leave the interpretation session?",
+    "leave": "Leave",
+    "stay": "Stay"
+  },
+  "errorPrompt": {
+    "title": "Error",
+    "close": "Close"
+  }
+}

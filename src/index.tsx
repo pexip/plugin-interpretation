@@ -7,6 +7,8 @@ import { InterpretationContextProvider } from './InterpretationContext/Interpret
 import '@pexip/components/src/fonts.css'
 import '@pexip/components/dist/components.css'
 
+import './i18n'
+
 const root = document.getElementById('root')
 if (root == null) {
   throw new Error('Not found element with id=root')

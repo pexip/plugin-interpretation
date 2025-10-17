@@ -2,12 +2,15 @@ import React from 'react'
 
 import { RangeSlider } from '@pexip/components'
 import { useInterpretationContext } from '../../InterpretationContext/InterpretationContext'
+import { useTranslation } from 'react-i18next'
 
 import './Volume.scss'
 
 export const Volume = (): React.JSX.Element => {
   const { changeVolume, state } = useInterpretationContext()
   const { volume } = state
+
+  const { t } = useTranslation()
 
   const handleVolumeChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -34,8 +37,10 @@ export const Volume = (): React.JSX.Element => {
         className={`VolumeFooter ${volume < middleVolume ? 'MainFloorSelected' : 'InterpreterSelected'}`}
         data-testid="VolumeFooter"
       >
-        <span className="MainFloorLabel">Main floor</span>
-        <span className="InterpreterLabel">Interpreter</span>
+        <span className="MainFloorLabel">{t('mainFloor', 'Main floor')}</span>
+        <span className="InterpreterLabel">
+          {t('interpreter', 'Interpreter')}
+        </span>
       </div>
     </div>
   )

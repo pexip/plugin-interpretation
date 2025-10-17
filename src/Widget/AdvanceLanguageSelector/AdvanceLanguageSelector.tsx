@@ -5,6 +5,7 @@ import { Direction } from '../../types/Direction'
 import { useInterpretationContext } from '../../InterpretationContext/InterpretationContext'
 import clsx from 'clsx'
 import { logger } from '../../logger'
+import { useTranslation } from 'react-i18next'
 
 import './AdvanceLanguageSelector.scss'
 
@@ -13,6 +14,8 @@ export const AdvanceLanguageSelector = (): React.JSX.Element => {
   const { language, direction } = state
 
   const reversed = direction === Direction.InterpretationToMainRoom
+
+  const { t } = useTranslation()
 
   const handleChangeLanguage = async (code: string): Promise<void> => {
     const language = getLanguageByCode(code)
@@ -38,14 +41,14 @@ export const AdvanceLanguageSelector = (): React.JSX.Element => {
       <Select
         className="MainFloorSelect Select"
         isFullWidth
-        label={reversed ? 'To' : 'From'}
+        label={reversed ? t('to', 'To') : t('from', 'From')}
         value={'main'}
         isDisabled={true}
         onValueChange={() => undefined}
         options={[
           {
             id: 'main',
-            label: 'Main floor'
+            label: t('mainFloor', 'Main floor')
           }
         ]}
       />
@@ -65,7 +68,7 @@ export const AdvanceLanguageSelector = (): React.JSX.Element => {
         isFullWidth
         data-testid="LanguageSelect"
         aria-label="language select"
-        label={reversed ? 'From' : 'To'}
+        label={reversed ? t('from', 'From') : t('to', 'To')}
         value={language != null ? language.code : ''}
         options={getLanguageOptions()}
         onValueChange={(code: string) => {
