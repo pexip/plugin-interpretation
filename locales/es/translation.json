@@ -1,26 +1,27 @@
 {
   "from": "de",
-  "to": "a",
+  "hideDialog": "Ocultar diálogo",
   "interpretation": "Interpretación",
   "interpreter": "Intérprete",
+  "join": "Unirse",
   "mainFloor": "Planta principal",
   "mute": "Silenciar",
+  "to": "a",
   "unmute": "Activar micrófono",
-  "join": "Unirse",
-  "hideDialog": "Ocultar diálogo",
+  "volume": "Volumen",
   "selectLanguageForm": {
     "title": "Seleccionar idioma",
     "language": "Idioma"
   },
   "pinForm": {
-    "title": "Se requiere PIN",
+    "title": "PIN requerido",
     "placeholder": "Introducir PIN"
   },
   "disconnectPrompt": {
     "title": "Salir de la interpretación",
     "content": "¿Está seguro de que desea salir de la sesión de interpretación?",
     "leave": "Salir",
-    "stay": "Permanecer"
+    "cancel": "Cancelar"
   },
   "errorPrompt": {
     "title": "Error",
