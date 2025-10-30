@@ -18,6 +18,7 @@ export const initializeEvents = (): void => {
   plugin.events.me.add(handleMe)
   plugin.events.participantsActivities.add(handleParticipantsActivities)
   plugin.events.disconnected.add(handleDisconnected)
+  plugin.events.userInitiatedDisconnect.add(handleDisconnected)
   plugin.events.languageSelect.add(async (language: string): Promise<void> => {
     await i18n.changeLanguage(language)
   })
