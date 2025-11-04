@@ -1,14 +1,14 @@
 const toolbarUnmutedTestId = 'button-meeting-audioinput'
 const toolbarMutedTestId = 'button-meeting-audioinput-muted'
-const foldedSelViewTestId = 'button-toggle-audio-in-folded-selfview'
-const selfViewWrapperTestId = 'button-selfview-quality'
+const selfViewMutedTestId = 'button-toggle-audio-in-selfview'
+const foldedSelfViewMutedTestId = 'button-toggle-audio-in-folded-selfview'
 const meetingWrapperTestId = 'meeting-wrapper'
 
 const toolbarUnmutedSelector = `button[data-testid=${toolbarUnmutedTestId}]`
 const toolbarMutedSelector = `button[data-testid=${toolbarMutedTestId}]`
-const foldedSelViewSelector = `button[data-testid=${foldedSelViewTestId}]`
-const qualitySelector = `button[data-testid=${selfViewWrapperTestId}]`
-const selfViewContainerSelector = `div[data-testid=${meetingWrapperTestId}]>div:nth-child(3)`
+const selfViewMutedSelector = `button[data-testid=${selfViewMutedTestId}]`
+const foldedSelfViewSelector = `button[data-testid=${foldedSelfViewMutedTestId}]`
+const selfViewContainerSelector = `div[data-testid=${meetingWrapperTestId}] > div[role=region]`
 
 const observerCallback = (): void => {
   disable(true)
@@ -86,7 +86,7 @@ const enableButton = (button: HTMLButtonElement): void => {
 
 const disableButton = (button: HTMLButtonElement): void => {
   const isFoldedSelfView =
-    button.getAttribute('data-testid') === foldedSelViewTestId
+    button.getAttribute('data-testid') === foldedSelfViewMutedTestId
 
   button.setAttribute('disabled', '')
   button.style.color = 'rgba(100, 100, 100, .35)'
@@ -107,15 +107,13 @@ const getToolbarButton = (): HTMLButtonElement | null => {
 }
 
 const getFoldedSelfViewButton = (): HTMLButtonElement | null => {
-  const button = parent.document.querySelector(foldedSelViewSelector)
+  const button = parent.document.querySelector(foldedSelfViewSelector)
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- The querySelector ensures is a button
   return button as HTMLButtonElement | null
 }
 
 const getSelfViewButton = (): HTMLButtonElement | null => {
-  const qualityButton = parent.document.querySelector(qualitySelector)
-  const { parentNode } = qualityButton ?? {}
-  const button = parentNode?.querySelector('button:first-child') ?? null
+  const button = parent.document.querySelector(selfViewMutedSelector)
   // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- The querySelector ensures is a button
   return button as HTMLButtonElement | null
 }
