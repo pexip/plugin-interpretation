@@ -15,7 +15,7 @@ export const showDisconnectPrompt = async (): Promise<void> => {
     ),
     prompt: {
       primaryAction,
-      secondaryAction: t('disconnectPrompt.stay', 'Stay')
+      secondaryAction: t('disconnectPrompt.cancel', 'Cancel')
     }
   })
 

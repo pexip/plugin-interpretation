@@ -1,13 +1,14 @@
 {
   "from": "De",
-  "to": "À",
+  "hideDialog": "Masquer la boîte de dialogue",
   "interpretation": "Interprétation",
   "interpreter": "Interprète",
+  "join": "Rejoindre",
   "mainFloor": "Étage principal",
   "mute": "Couper le son",
+  "to": "À",
   "unmute": "Rétablir le son",
-  "join": "Rejoindre",
-  "hideDialog": "Masquer la boîte de dialogue",
+  "volume": "Volume",
   "selectLanguageForm": {
     "title": "Sélectionner la langue",
     "language": "Langue"
@@ -20,7 +21,7 @@
     "title": "Quitter l'interprétation",
     "content": "Êtes-vous sûr de vouloir quitter la session d'interprétation ?",
     "leave": "Quitter",
-    "stay": "Rester"
+    "cancel": "Annuler"
   },
   "errorPrompt": {
     "title": "Erreur",

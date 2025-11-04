@@ -22,7 +22,7 @@ export const Volume = (): React.JSX.Element => {
 
   return (
     <div className="Volume" data-testid="Volume">
-      <span>Volume</span>
+      <span>{t('volume', 'Volume')}</span>
       <RangeSlider
         className="VolumeSlider"
         min={0}
