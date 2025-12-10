@@ -188,39 +188,127 @@ $ npm run listener
 
 An easy way to test the plugin is to use a local policy. In this case we
 designed a local policy for testing. It will allow every VMR with 2 or 6 digits
-and will use the pins 1234 for the hosts and 4321 for the guests.
+and will use the pins `1234` for the hosts and `4321` for the guests.
+
+The process is as follows:
+
+- We will use a local participant policy that adds a `callTag` to the
+  participant in the **main room**. To obtain it, we will follow this process:
+  1. Concatenate the following parameters:
+     - `pin`
+     - `guest_pin`
+     - `local_alias`
+  2. Apply `pex_hash` to the concatenated string.
+  3. Take only the last 20 digits of the result.
+
+- The plugin will retrieve the user's `callTag` and use it to generate the `pin`
+  for the **interpretation room**. To do so, we will follow this process:
+  1. Concatenate the following parameters:
+     - The previous `callTag`
+     - `role` (e.g., `interpreter` or `listener`)
+
+- The service configuration policy will attempt to replicate the same `pin`
+  using the same process. It will choose the role `interpreter` for the `pin`
+  and `listener` for the `guest_pin`.
+
+<div align='center'>
+
+![Call Tag Sequence Diagram](./docs/call_tag.svg)
+
+</div>
+
+### Service configuration policy
 
 ```python
-{
-  {% if (call_info.local_alias | pex_regex_replace('^(\d{2}|\d{6})$',  '') == '')  %}
+{# Static PINs but we can define a function to generate a PIN per VMR #}
+{% set pin = "1234" %}
+{% set guest_pin = "4321" %}
+
+{% set callTag = "" %}
+
+{% if (call_info.local_alias | pex_regex_replace('^(\d{2})$',  '') == '')  %}
+  {# Main rooms for 2-digit VMRs #}
+
+  {
     "action": "continue",
     "result": {
-        "service_type": "conference",
-        "name": "{{call_info.local_alias}}",
-        "service_tag": "pexip-interpreter",
-        "description": "",
-        "call_tag": "",
-        "pin": "1234",
-        "guest_pin": "4321",
-        "guests_can_present": true,
-        "allow_guests": true,
-        "view": "four_mains_zero_pips",
-        "ivr_theme_name": "visitor_normal",
-        "locked": false,
-        "automatic_participants": []
-     }
-  {% elif service_config %}
-    {
-      "action" : "continue",
-      "result" : {{service_config | pex_to_json}}
+      "service_type": "conference",
+      "name": "{{call_info.local_alias}}",
+      "service_tag": "pexip-interpreter",
+      "pin": "{{pin}}",
+      "guest_pin": "{{guest_pin}}",
+      "guests_can_present": true,
+      "allow_guests": true,
+      "view": "four_mains_zero_pips"
     }
-  {% else %}
-    {
-      "action" : "reject",
-      "result" : {}
+  }
+
+{% elif (call_info.local_alias | pex_regex_replace('^(\d{6})$',  '') == '')  %}
+  {# Interpretation rooms for 6-digit VMRs #}
+
+  {% set callTag = (pin + guest_pin + (call_info.local_alias | pex_regex_replace('^(\d{2})(\d{4})$',  '\\1') )) | pex_hash | pex_tail(20)  %}
+
+  {% set pin = (callTag + "interpreter") | pex_hash | pex_tail(20) %}
+  {% set guest_pin = (callTag + "listener") | pex_hash | pex_tail(20) %}
+
+  {
+    "action": "continue",
+    "result": {
+      "service_type": "conference",
+      "name": "{{call_info.local_alias}}",
+      "service_tag": "pexip-interpreter",
+      "pin": "{{pin}}",
+      "guest_pin": "{{guest_pin}}",
+      "allow_guests": true
     }
-  {% endif %}
-}
+  }
+
+{% elif service_config %}
+
+  {
+    "action" : "continue",
+    "result" : {{service_config | pex_to_json}}
+  }
+
+{% else %}
+
+  {
+    "action" : "reject",
+    "result" : {}
+  }
+
+{% endif %}
+```
+
+### Participant policy
+
+```python
+{# Static PINs but we can define a function to generate a PIN per VMR #}
+{% set pin = "1234" %}
+{% set guest_pin = "4321" %}
+
+{% set callTag = "" %}
+
+{% if (call_info.local_alias | pex_regex_replace('^(\d{2})$',  '') == '')  %}
+  {% set callTag = (pin + guest_pin + call_info.local_alias) | pex_hash | pex_tail(20)  %}
+
+  {
+    "status": "success",
+    "action": "continue",
+    "result": {
+      "call_tag": "{{callTag}}"
+    }
+  }
+
+{% else %}
+
+  {
+    "status": "success",
+    "action": "continue",
+    "result": {}
+  }
+
+{% endif %}
 ```
 
 ## Build for production
