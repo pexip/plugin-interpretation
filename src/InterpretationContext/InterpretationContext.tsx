@@ -108,7 +108,6 @@ export const InterpretationContextProvider = (props: {
     try {
       const conferenceAlias = getMainConferenceAlias() + language.code
       const bandwidth = 0
-      logger.info(getUser().rawData.call_tag)
 
       const { rawData } = getUser()
       const { call_tag: callTag } = rawData
