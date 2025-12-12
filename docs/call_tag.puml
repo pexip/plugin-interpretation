@@ -1,1 +1,12 @@
-@startumlparticipant Webapp3participant Pluginparticipant InfinityWebapp3 -> Infinity: Join main conference {pin: <vmr_pin>}Infinity -> Webapp3: Joined { call_tag: pexHash(pin + guest_pin + local_alias).tail(20) }Plugin -> Infinity: Join interpretation {pin: pexHash(call_tag + role).tail(20)}Infinity -> Infinity: Check PIN:\npin: pexHash(call_tag + 'interpreter').tail(20),\nguest_pin: pexHash(call_tag + 'listener').tail(20)Infinity -> Plugin: Joined@enduml
+@startuml
+
+participant Webapp3
+participant Plugin
+participant Infinity
+
+Webapp3 -> Infinity: Join main conference {pin: <vmr_pin>}
+Infinity -> Webapp3: Joined { call_tag: pexHash(local_alias + display_name).tail(20) }
+Plugin -> Infinity: Join interpretation {pin: pexHash(call_tag + role).tail(20)}
+Infinity -> Infinity: Check PIN:\npin: pexHash(call_tag + 'interpreter').tail(20),\nguest_pin: pexHash(call_tag + 'listener').tail(20)
+Infinity -> Plugin: Joined
+@enduml
