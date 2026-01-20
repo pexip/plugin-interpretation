@@ -211,11 +211,18 @@ The process is as follows:
   using the same process. It will choose the role `interpreter` for the `pin`
   and `listener` for the `guest_pin`.
 
-<div align='center'>
+```mermaid
+sequenceDiagram
+participant Webapp3
+participant Plugin
+participant Infinity
 
-![Call Tag Sequence Diagram](./docs/call_tag.svg)
-
-</div>
+Webapp3 ->> Infinity: Join main conference {pin: <vmr_pin>}
+Infinity -->> Webapp3: Joined { call_tag: pexHash(local_alias + display_name).tail(20) }
+Plugin ->> Infinity: Join interpretation {pin: pexHash(call_tag + role).tail(20)}
+Infinity ->> Infinity: Check PIN:<br>pin: pexHash(call_tag + 'interpreter').tail(20),<br>guest_pin: pexHash(call_tag + 'listener').tail(20)
+Infinity -->> Plugin: Joined
+```
 
 ### Service configuration policy
 
