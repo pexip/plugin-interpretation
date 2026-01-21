@@ -160,17 +160,7 @@ export const InterpretationContextProvider = (props: {
 
   const disconnect = async (): Promise<void> => {
     await infinityClient?.disconnect({ reason: 'User initiated disconnect' })
-    audio.pause()
-    const maxVolume = 1
-    MainRoom.setVolume(maxVolume)
-    if (!isListenerUnidirectional()) {
-      MainRoom.disableMute(false)
-      MainRoom.setMute(state.muted)
-    }
-    await setButtonActive(false)
-    dispatch({
-      type: InterpretationActionType.Disconnected
-    })
+    await handleDisconnected()
   }
 
   const changeMediaDevice = async (
@@ -302,6 +292,7 @@ export const InterpretationContextProvider = (props: {
       pin = undefined
       await showErrorPrompt(options)
     })
+    signals.onDisconnected.add(handleDisconnected)
     return signals
   }
 
@@ -352,6 +343,20 @@ export const InterpretationContextProvider = (props: {
     await setButtonActive(true)
     dispatch({
       type: InterpretationActionType.Connected
+    })
+  }
+
+  const handleDisconnected = async (): Promise<void> => {
+    audio.pause()
+    const maxVolume = 1
+    MainRoom.setVolume(maxVolume)
+    if (!isListenerUnidirectional()) {
+      MainRoom.disableMute(false)
+      MainRoom.setMute(state.muted)
+    }
+    await setButtonActive(false)
+    dispatch({
+      type: InterpretationActionType.Disconnected
     })
   }
 

@@ -119,7 +119,8 @@ jest.mock(
           })
         },
         onError: { add: jest.fn() },
-        onPinRequired: { add: jest.fn() }
+        onPinRequired: { add: jest.fn() },
+        onDisconnected: { add: jest.fn() }
       })),
       createCallSignals: jest.fn(() => ({
         onRemoteStream: { add: jest.fn() }
