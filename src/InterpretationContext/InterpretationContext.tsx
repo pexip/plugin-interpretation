@@ -163,8 +163,10 @@ export const InterpretationContextProvider = (props: {
     audio.pause()
     const maxVolume = 1
     MainRoom.setVolume(maxVolume)
-    MainRoom.disableMute(false)
-    MainRoom.setMute(state.muted)
+    if (!isListenerUnidirectional()) {
+      MainRoom.disableMute(false)
+      MainRoom.setMute(state.muted)
+    }
     await setButtonActive(false)
     dispatch({
       type: InterpretationActionType.Disconnected
@@ -187,7 +189,9 @@ export const InterpretationContextProvider = (props: {
 
   const changeLanguage = async (language: Language): Promise<void> => {
     await infinityClient?.disconnect({ reason: 'User initiated disconnect' })
-    MainRoom.setMute(state.muted)
+    if (!isListenerUnidirectional()) {
+      MainRoom.setMute(state.muted)
+    }
     await connect(language)
     dispatch({
       type: InterpretationActionType.ChangedLanguage,
@@ -382,4 +386,12 @@ export const useInterpretationContext = (): InterpretationContextType => {
     )
   }
   return interpretationContext
+}
+
+const isListenerUnidirectional = (): boolean => {
+  const { role } = config
+  return (
+    role === Role.Listener &&
+    config.listener?.speakToInterpretationRoom !== true
+  )
 }
