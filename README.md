@@ -195,9 +195,8 @@ The process is as follows:
 - We will use a local participant policy that adds a `callTag` to the
   participant in the **main room**. To obtain it, we will follow this process:
   1. Concatenate the following parameters:
-     - `pin`
-     - `guest_pin`
      - `local_alias`
+     - `display_name`
   2. Apply `pex_hash` to the concatenated string.
   3. Take only the last 20 digits of the result.
 
