@@ -19,6 +19,13 @@ We have two additional brandings in case of a **bidirectional** scenario. This
 scenario is when the the interpreter can translate from the main room to the
 interpretation room and the other way around.
 
+## Known limitations
+
+- iOS devices have limitations when trying to change the volume of the main room
+  and the interpretation room separately. For this reason, the slider to balance
+  both audios will mute/unmute the main and interpretation rooms instead of
+  changing the volume.
+
 ## How to use
 
 The interface and the plugin capabilities will depend in its configuration.
