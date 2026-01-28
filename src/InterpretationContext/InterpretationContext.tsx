@@ -23,7 +23,6 @@ import { getMainConferenceAlias } from '../conference'
 import { MainRoom } from '../main-room'
 import { setButtonActive } from '../button'
 import { logger } from '../logger'
-import { isIOS } from '../utils'
 
 const batchScheduleTimeoutMS = 500
 const batchBufferSize = 10
