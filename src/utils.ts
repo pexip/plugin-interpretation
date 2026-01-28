@@ -16,7 +16,4 @@ export const capitalizeFirstLetter = (value: string): string => {
   return value.charAt(firstIndex).toUpperCase() + value.slice(secondIndex)
 }
 
-export const isIOS = (): boolean =>
-  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-  // iPad on iOS 13 detection
-  (navigator.userAgent.includes('Mac') && 'ontouchend' in document)
+export const isIOS = (): boolean => /iPad|iPhone|iPod/.test(navigator.userAgent)
