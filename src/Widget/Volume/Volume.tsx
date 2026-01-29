@@ -28,13 +28,15 @@ export const Volume = (): React.JSX.Element => {
   const hasMainFloorPriority = volume < middleVolume
 
   useEffect(() => {
-    // Set initial volume on mount for iOS devices
-    const minVolumeIOS = 0
-    const maxVolume = 100
-    if (isIOS() && hasMainFloorPriority) {
-      changeVolume(minVolumeIOS)
-    } else {
-      changeVolume(maxVolume)
+    if (isIOS()) {
+      // Set initial volume on mount for iOS devices
+      const minVolumeIOS = 0
+      const maxVolume = 100
+      if (hasMainFloorPriority) {
+        changeVolume(minVolumeIOS)
+      } else {
+        changeVolume(maxVolume)
+      }
     }
   }, [])
 
