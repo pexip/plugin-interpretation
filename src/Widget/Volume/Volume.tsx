@@ -38,6 +38,7 @@ export const Volume = (): React.JSX.Element => {
         changeVolume(maxVolume)
       }
     }
+    // We only want to run this effect on mount since it's setting initial volume for iOS
   }, [])
 
   return (
