@@ -196,6 +196,7 @@ The process is as follows:
   participant in the **main room**. To obtain it, we will follow this process:
   1. Concatenate the following parameters:
      - `local_alias`
+     - `vendor`
      - `display_name`
   2. Apply `pex_hash` to the concatenated string.
   3. Take only the last 20 digits of the result.
@@ -217,7 +218,7 @@ participant Plugin
 participant Infinity
 
 Webapp3 ->> Infinity: Join main conference {pin: <vmr_pin>}
-Infinity -->> Webapp3: Joined { call_tag: pexHash(local_alias + display_name).tail(20) }
+Infinity -->> Webapp3: Joined { call_tag: pexHash(local_alias + vendor + display_name).tail(20) }
 Plugin ->> Infinity: Join interpretation {pin: pexHash(call_tag + role).tail(20)}
 Infinity ->> Infinity: Check PIN:<br>pin: pexHash(call_tag + 'interpreter').tail(20),<br>guest_pin: pexHash(call_tag + 'listener').tail(20)
 Infinity -->> Plugin: Joined
@@ -252,7 +253,7 @@ Infinity -->> Plugin: Joined
 {% elif (call_info.local_alias | pex_regex_replace('^(\d{6})$',  '') == '') %}
   {# Interpretation rooms for 6-digit VMRs #}
 
-  {% set callTag = ((call_info.local_alias | pex_regex_replace('^(\d{2})(\d{4})$',  '\\1') ) + (call_info.remote_display_name | pex_regex_replace('^(.*)\ -\ (Interpreter|Listener)$',  '\\1') )) | pex_hash | pex_tail(20)  %}
+  {% set callTag = ((call_info.local_alias | pex_regex_replace('^(\d{2})(\d{4})$',  '\\1') ) + call_info.vendor + (call_info.remote_display_name | pex_regex_replace('^(.*)\ -\ (Interpreter|Listener)$',  '\\1') )) | pex_hash | pex_tail(20)  %}
 
   {% set pin = (callTag + "interpreter") | pex_hash | pex_tail(20) %}
   {% set guest_pin = (callTag + "listener") | pex_hash | pex_tail(20) %}
@@ -291,8 +292,11 @@ Infinity -->> Plugin: Joined
 ```python
 {% set callTag = "" %}
 
+{# Remove the Webapp3 suffix from the vendor string, e.g. " Webapp3/11.0.0+c29a9d064" #}
+{% set vendor = call_info.vendor | pex_regex_replace(" Webapp3.*$", "") %}
+
 {% if (call_info.local_alias | pex_regex_replace('^(\d{2})$',  '') == '')  %}
-  {% set callTag = (call_info.local_alias + call_info.remote_display_name) | pex_hash | pex_tail(20)  %}
+  {% set callTag = (call_info.local_alias + vendor + call_info.remote_display_name) | pex_hash | pex_tail(20)  %}
 
   {
     "status": "success",
