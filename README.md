@@ -195,6 +195,8 @@ The process is as follows:
 - We will use a local participant policy that adds a `callTag` to the
   participant in the **main room**. To obtain it, we will follow this process:
   1. Concatenate the following parameters:
+     - `secret` (a secret value that we can change to invalidate all the
+       generated `callTags`)
      - `local_alias`
      - `vendor`
      - `display_name`
@@ -218,7 +220,7 @@ participant Plugin
 participant Infinity
 
 Webapp3 ->> Infinity: Join main conference {pin: <vmr_pin>}
-Infinity -->> Webapp3: Joined { call_tag: pexHash(local_alias + vendor + display_name).tail(20) }
+Infinity -->> Webapp3: Joined { call_tag: pexHash(secret + local_alias + vendor + display_name).tail(20) }
 Plugin ->> Infinity: Join interpretation {pin: pexHash(call_tag + role).tail(20)}
 Infinity ->> Infinity: Check PIN:<br>pin: pexHash(call_tag + 'interpreter').tail(20),<br>guest_pin: pexHash(call_tag + 'listener').tail(20)
 Infinity -->> Plugin: Joined
@@ -230,6 +232,10 @@ Infinity -->> Plugin: Joined
 {# Static PINs but we can define a function to generate a PIN per VMR #}
 {% set pin = "1234" %}
 {% set guest_pin = "4321" %}
+
+{# Changing this value will invalidate all the generated callTags. #}
+{# It should be the same used in the participant policy #}
+{% set secret = "my_secret_value" %}
 
 {% set callTag = "" %}
 
@@ -253,7 +259,13 @@ Infinity -->> Plugin: Joined
 {% elif (call_info.local_alias | pex_regex_replace('^(\d{6})$',  '') == '') %}
   {# Interpretation rooms for 6-digit VMRs #}
 
-  {% set callTag = ((call_info.local_alias | pex_regex_replace('^(\d{2})(\d{4})$',  '\\1') ) + call_info.vendor + (call_info.remote_display_name | pex_regex_replace('^(.*)\ -\ (Interpreter|Listener)$',  '\\1') )) | pex_hash | pex_tail(20)  %}
+  {% set callTag = (
+    secret +
+    (call_info.local_alias | pex_regex_replace('^(\d{2})(\d{4})$',  '\\1') ) +
+    call_info.vendor +
+    (call_info.remote_display_name | pex_regex_replace('^(.*)\ -\ (Interpreter|Listener)$',  '\\1') )) |
+    pex_hash | pex_tail(20)
+  %}
 
   {% set pin = (callTag + "interpreter") | pex_hash | pex_tail(20) %}
   {% set guest_pin = (callTag + "listener") | pex_hash | pex_tail(20) %}
@@ -290,13 +302,23 @@ Infinity -->> Plugin: Joined
 ### Participant policy
 
 ```python
+{# Changing this value will invalidate all the generated callTags. #}
+{# It should be the same used in the participant policy #}
+{% set secret = "my_secret_value" %}
+
 {% set callTag = "" %}
 
 {# Remove the Webapp3 suffix from the vendor string, e.g. " Webapp3/11.0.0+c29a9d064" #}
 {% set vendor = call_info.vendor | pex_regex_replace(" Webapp3.*$", "") %}
 
 {% if (call_info.local_alias | pex_regex_replace('^(\d{2})$',  '') == '')  %}
-  {% set callTag = (call_info.local_alias + vendor + call_info.remote_display_name) | pex_hash | pex_tail(20)  %}
+  {% set callTag = (
+    secret +
+    call_info.local_alias +
+    vendor +
+    call_info.remote_display_name) |
+    pex_hash | pex_tail(20)
+  %}
 
   {
     "status": "success",
@@ -320,28 +342,15 @@ Infinity -->> Plugin: Joined
 #### Security considerations
 
 Although the system is secure and nobody can access an interpretation room
-without being invited, we need to consider the following aspects, which will be
-fixed or mitigated in future versions:
+without being invited, we need to consider one aspect which will be fixed or
+mitigated in future versions:
 
-1. A user who previously joined a conference can join an interpretation room
-   even if the `PIN` of the main room has changed. To do this, the user must
-   reuse the same `callTag` generated in the previous conference and use the
-   same browser (brand and version) as well as the same display name.
-
-2. When joining an interpretation room, an `interpreter` is assigned the `host`
-   role, while a `listener` is assigned the `guest` role. This means that the
-   meeting starts as soon as the first interpreter joins. Since the role
-   assignment is based on a tag, a user could potentially escalate from guest to
-   host without any additional authentication. This could allow the user to
-   start the interpretation room and interact with the conference via the API.
-
-Some ways to avoid these issues are:
-
-- Avoid reusing the same conference alias. This prevents the reuse of a
-  `callTag` from previous conference sessions.
-
-- Use the main room `pin` and `guest_pin` to generate the `callTag`. This way,
-  changing either of them will invalidate all previously generated `callTags`.
+- When joining an interpretation room, an `interpreter` is assigned the `host`
+  role, while a `listener` is assigned the `guest` role. This means that the
+  meeting starts as soon as the first interpreter joins. Since the role
+  assignment is based on a tag, a user could potentially escalate from guest to
+  host without any additional authentication. This could allow the user to start
+  the interpretation room and interact with the conference via the API.
 
 ### Join with a SIP device to a interpretation room (testing only)
 
