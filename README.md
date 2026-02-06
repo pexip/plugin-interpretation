@@ -317,6 +317,32 @@ Infinity -->> Plugin: Joined
 {% endif %}
 ```
 
+#### Security considerations
+
+Although the system is secure and nobody can access an interpretation room
+without being invited, we need to consider the following aspects, which will be
+fixed or mitigated in future versions:
+
+1. A user who previously joined a conference can join an interpretation room
+   even if the `PIN` of the main room has changed. To do this, the user must
+   reuse the same `callTag` generated in the previous conference and use the
+   same browser (brand and version) as well as the same display name.
+
+2. When joining an interpretation room, an `interpreter` is assigned the `host`
+   role, while a `listener` is assigned the `guest` role. This means that the
+   meeting starts as soon as the first interpreter joins. Since the role
+   assignment is based on a tag, a user could potentially escalate from guest to
+   host without any additional authentication. This could allow the user to
+   start the interpretation room and interact with the conference via the API.
+
+Some ways to avoid these issues are:
+
+- Avoid reusing the same conference alias. This prevents the reuse of a
+  `callTag` from previous conference sessions.
+
+- Use the main room `pin` and `guest_pin` to generate the `callTag`. This way,
+  changing either of them will invalidate all previously generated `callTags`.
+
 ### Join with a SIP device to a interpretation room (testing only)
 
 To join to an interpretation room through a SIP device you need to follow these
