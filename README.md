@@ -342,7 +342,7 @@ Infinity -->> Plugin: Joined
 #### Security considerations
 
 Although the system is secure and nobody can access an interpretation room
-without being invited, we need to consider one aspect which will be fixed or
+without being invited, we need to consider one aspect which will be addressed or
 mitigated in future versions:
 
 - When joining an interpretation room, an `interpreter` is assigned the `host`
