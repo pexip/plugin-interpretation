@@ -348,9 +348,10 @@ mitigated in future versions:
 - When joining an interpretation room, an `interpreter` is assigned the `host`
   role, while a `listener` is assigned the `guest` role. This means that the
   meeting starts as soon as the first interpreter joins. Since the role
-  assignment is based on a tag, a user could potentially escalate from guest to
-  host without any additional authentication. This could allow the user to start
-  the interpretation room and interact with the conference via the API.
+  assignment is based on a tag, a listener could potentially join to an
+  interpretation room as host a instead of guest. This could allow the user to
+  start the interpretation room and interact with the interpretation session via
+  the API.
 
 ### Join with a SIP device to a interpretation room (testing only)
 
