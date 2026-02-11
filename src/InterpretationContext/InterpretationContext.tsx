@@ -114,7 +114,11 @@ export const InterpretationContextProvider = (props: {
 
       if (callTag != null) {
         const maxSize = 20
-        const input = `${callTag}${state.role}`
+        // The callTag can have the following format: `01234567890123456789?french,spanish`
+        // we want to obtain the part before the "?", the role as suffix, so it becomes:
+        // `01234567890123456789interpreter`
+        let [input] = callTag.split('?')
+        input = `${input}${state.role}`
         pin = (await pexHash(input))?.slice(-maxSize) ?? pin
       }
 
