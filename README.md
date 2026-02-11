@@ -188,40 +188,218 @@ $ npm run listener
 
 An easy way to test the plugin is to use a local policy. In this case we
 designed a local policy for testing. It will allow every VMR with 2 or 6 digits
-and will use the pins 1234 for the hosts and 4321 for the guests.
+and will use the pins `1234` for the hosts and `4321` for the guests.
+
+The process is as follows:
+
+- We will use a local participant policy that adds a `callTag` to the
+  participant in the **main room**. To obtain it, we will follow this process:
+  1. Concatenate the following parameters:
+     - `secret` (a secret value that we can change to invalidate all the
+       generated `callTags`)
+     - `local_alias`
+     - `vendor`
+     - `display_name`
+  2. Apply `pex_hash` to the concatenated string.
+  3. Take only the last 20 digits of the result.
+
+- The plugin will retrieve the user's `callTag` and use it to generate the `pin`
+  for the **interpretation room**. To do so, we will follow this process:
+  1. Concatenate the following parameters:
+     - The previous `callTag`
+     - `role` (e.g., `interpreter` or `listener`)
+
+- The service configuration policy will attempt to replicate the same `pin`
+  using the same process. It will choose the role `interpreter` for the `pin`
+  and `listener` for the `guest_pin`.
+
+```mermaid
+sequenceDiagram
+participant Webapp3
+participant Plugin
+participant Infinity
+
+Webapp3 ->> Infinity: Join main conference {pin: <vmr_pin>}
+Infinity -->> Webapp3: Joined { call_tag: pexHash(secret + local_alias + vendor + display_name).tail(20) }
+Plugin ->> Infinity: Join interpretation {pin: pexHash(call_tag + role).tail(20)}
+Infinity ->> Infinity: Check PIN:<br>pin: pexHash(call_tag + 'interpreter').tail(20),<br>guest_pin: pexHash(call_tag + 'listener').tail(20)
+Infinity -->> Plugin: Joined
+```
+
+### Service configuration policy
 
 ```python
-{
-  {% if (call_info.local_alias | pex_regex_replace('^(\d{2}|\d{6})$',  '') == '')  %}
+{# Static PINs but we can define a function to generate a PIN per VMR #}
+{% set pin = "1234" %}
+{% set guest_pin = "4321" %}
+
+{# Changing this value will invalidate all the generated callTags. #}
+{# It should be the same used in the participant policy #}
+{% set secret = "my_secret_value" %}
+
+{% set callTag = "" %}
+
+{% if (call_info.local_alias | pex_regex_replace('^(\d{2})$',  '') == '')  %}
+  {# Main rooms for 2-digit VMRs #}
+
+  {
     "action": "continue",
     "result": {
-        "service_type": "conference",
-        "name": "{{call_info.local_alias}}",
-        "service_tag": "pexip-interpreter",
-        "description": "",
-        "call_tag": "",
-        "pin": "1234",
-        "guest_pin": "4321",
-        "guests_can_present": true,
-        "allow_guests": true,
-        "view": "four_mains_zero_pips",
-        "ivr_theme_name": "visitor_normal",
-        "locked": false,
-        "automatic_participants": []
-     }
-  {% elif service_config %}
-    {
-      "action" : "continue",
-      "result" : {{service_config | pex_to_json}}
+      "service_type": "conference",
+      "name": "{{call_info.local_alias}}",
+      "service_tag": "pexip-interpreter",
+      "pin": "{{pin}}",
+      "guest_pin": "{{guest_pin}}",
+      "guests_can_present": true,
+      "allow_guests": true,
+      "view": "four_mains_zero_pips"
     }
-  {% else %}
-    {
-      "action" : "reject",
-      "result" : {}
+  }
+
+{% elif (call_info.local_alias | pex_regex_replace('^(\d{6})$',  '') == '') %}
+  {# Interpretation rooms for 6-digit VMRs #}
+
+  {% set callTag = (
+    secret +
+    (call_info.local_alias | pex_regex_replace('^(\d{2})(\d{4})$',  '\\1') ) +
+    call_info.vendor +
+    (call_info.remote_display_name | pex_regex_replace('^(.*)\ -\ (Interpreter|Listener)$',  '\\1') )) |
+    pex_hash | pex_tail(20)
+  %}
+
+  {% set pin = (callTag + "interpreter") | pex_hash | pex_tail(20) %}
+  {% set guest_pin = (callTag + "listener") | pex_hash | pex_tail(20) %}
+
+  {
+    "action": "continue",
+    "result": {
+      "service_type": "conference",
+      "name": "{{call_info.local_alias}}",
+      "service_tag": "pexip-interpreter",
+      "pin": "{{pin}}",
+      "guest_pin": "{{guest_pin}}",
+      "allow_guests": true
     }
-  {% endif %}
-}
+  }
+
+{% elif service_config %}
+
+  {
+    "action" : "continue",
+    "result" : {{service_config | pex_to_json}}
+  }
+
+{% else %}
+
+  {
+    "action" : "reject",
+    "result" : {}
+  }
+
+{% endif %}
 ```
+
+### Participant policy
+
+```python
+{# Changing this value will invalidate all the generated callTags. #}
+{# It should be the same used in the participant policy #}
+{% set secret = "my_secret_value" %}
+
+{% set callTag = "" %}
+
+{# Remove the Webapp3 suffix from the vendor string, e.g. " Webapp3/11.0.0+c29a9d064" #}
+{% set vendor = call_info.vendor | pex_regex_replace(" Webapp3.*$", "") %}
+
+{% if (call_info.local_alias | pex_regex_replace('^(\d{2})$',  '') == '')  %}
+  {% set callTag = (
+    secret +
+    call_info.local_alias +
+    vendor +
+    call_info.remote_display_name) |
+    pex_hash | pex_tail(20)
+  %}
+
+  {
+    "status": "success",
+    "action": "continue",
+    "result": {
+      "call_tag": "{{callTag}}"
+    }
+  }
+
+{% else %}
+
+  {
+    "status": "success",
+    "action": "continue",
+    "result": {}
+  }
+
+{% endif %}
+```
+
+#### Security considerations
+
+Although the system is secure and nobody can access an interpretation room
+without being invited, we need to consider one aspect which will be addressed or
+mitigated in future versions:
+
+- When joining an interpretation room, an `interpreter` is assigned the `host`
+  role, while a `listener` is assigned the `guest` role. This means that the
+  meeting starts as soon as the first interpreter joins. Since the role
+  assignment is based on a tag, a listener could potentially join to an
+  interpretation room as host a instead of guest. This could allow the user to
+  start the interpretation room and interact with the interpretation session via
+  the API.
+
+### Join with a SIP device to a interpretation room (testing only)
+
+To join to an interpretation room through a SIP device you need to follow these
+steps:
+
+#### Create a new Call Routing Rule
+
+- Click on `Services > Call Routing`.
+- Click on `Add Call Routing Rule`.
+- Define the following parameters (leave the rest as default):
+  - **Name:** Interpretation SIP Join
+  - **Priority:** 1
+  - **Destination alias regex match** .\*
+- Click on `Save`.
+
+#### Create a VMR for interpretation
+
+- Click on `Services > Virtual Meeting Rooms`.
+- Click on `Add Virtual Meeting Room`.
+- Define the following parameters (leave the rest as default):
+  - **Name:** French room for 01
+  - **Host PIN:** 5678
+  - **Allow Guests:** true
+  - **Guest PIN:** 8765
+  - **Alias:** 010033
+  - **Advanced options**:
+    - **Guest can present:** false
+    - **Enable chat:** false
+    - **Conference capabilities:** Audio-only
+- Click on `Save`.
+
+#### Install a SIP softphone in your computer
+
+- You need to install a SIP softphone in your computer. You can use
+  [Zoiper](https://www.zoiper.com/en/voip-softphone/download/current) or any
+  other softphone that you like.
+
+- Configure the SIP softphone with a SIP account that can reach your Infinity
+  deployment.
+
+- Make a call to the VMR created in the previous step (e.g.
+  010033@192.168.1.101). Use the dialpad to enter the PIN for the host or guest.
+
+- In this case we will use the static VMR created before, so the host PIN is
+  `5678` and the guest PIN is `8765`. The reason is that the `local_alias` is
+  `sip:010033` and it doesn't match the regex for 2 or 6 digit VMRs from the
+  local policy.
 
 ## Build for production
 

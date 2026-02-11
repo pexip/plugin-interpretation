@@ -23,6 +23,7 @@ import { getMainConferenceAlias } from '../conference'
 import { MainRoom } from '../main-room'
 import { setButtonActive } from '../button'
 import { logger } from '../logger'
+import { capitalizeFirstLetter, pexHash } from '../utils'
 
 const batchScheduleTimeoutMS = 500
 const batchBufferSize = 10
@@ -84,8 +85,7 @@ export const InterpretationContextProvider = (props: {
     infinityClient = createInfinityClient(clientSignals, callSignals)
 
     const username = getUser().displayName ?? getUser().uuid
-    let roleTag = ''
-    let callType: ClientCallType = ClientCallType.Audio
+    const roleTag = capitalizeFirstLetter(state.role)
 
     if (!state.connected) {
       dispatch({
@@ -96,45 +96,28 @@ export const InterpretationContextProvider = (props: {
       })
     }
 
-    const { Audio, AudioSendOnly, AudioRecvOnly } = ClientCallType
-    if (state.role === Role.Interpreter) {
-      roleTag = 'Interpreter'
+    const callType = getCallType(state.role)
+
+    let mediaStream: MediaStream | undefined = undefined
+    if (callType !== ClientCallType.AudioRecvOnly) {
       const constraints = MainRoom.getMediaConstraints()
       mediaStream = await getMediaStream(constraints)
-      const { interpreter } = config
-      let shouldSendReceive = false
-      if (interpreter != null) {
-        const { allowChangeDirection } = interpreter
-        shouldSendReceive = allowChangeDirection
-      }
-      if (shouldSendReceive) {
-        callType = Audio
-      } else {
-        callType = AudioSendOnly
-      }
-    } else {
-      roleTag = 'Listener'
-      mediaStream = undefined
-      const { listener } = config
-      let shouldSendReceive = false
-      if (listener != null) {
-        const { speakToInterpretationRoom } = listener
-        shouldSendReceive = speakToInterpretationRoom
-      }
-      if (shouldSendReceive) {
-        const constraints = MainRoom.getMediaConstraints()
-        mediaStream = await getMediaStream(constraints)
-        callType = Audio
-      } else {
-        callType = AudioRecvOnly
-      }
     }
-
     const displayName = `${username} - ${roleTag}`
 
     try {
       const conferenceAlias = getMainConferenceAlias() + language.code
       const bandwidth = 0
+
+      const { rawData } = getUser()
+      const { call_tag: callTag } = rawData
+
+      if (callTag != null) {
+        const maxSize = 20
+        const input = `${callTag}${state.role}`
+        pin = (await pexHash(input))?.slice(-maxSize) ?? pin
+      }
+
       if (pin != null) {
         await infinityClient.call({
           conferenceAlias,
@@ -259,6 +242,40 @@ export const InterpretationContextProvider = (props: {
         minimized
       }
     })
+  }
+
+  const getCallType = (role: Role): ClientCallType => {
+    const { Audio, AudioSendOnly, AudioRecvOnly } = ClientCallType
+
+    let callType: ClientCallType = Audio
+
+    if (role === Role.Interpreter) {
+      const { interpreter } = config
+      let shouldSendReceive = false
+      if (interpreter != null) {
+        const { allowChangeDirection } = interpreter
+        shouldSendReceive = allowChangeDirection
+      }
+      if (shouldSendReceive) {
+        callType = Audio
+      } else {
+        callType = AudioSendOnly
+      }
+    } else {
+      const { listener } = config
+      let shouldSendReceive = false
+      if (listener != null) {
+        const { speakToInterpretationRoom } = listener
+        shouldSendReceive = speakToInterpretationRoom
+      }
+      if (shouldSendReceive) {
+        callType = Audio
+      } else {
+        callType = AudioRecvOnly
+      }
+    }
+
+    return callType
   }
 
   const getMediaStream = async (
