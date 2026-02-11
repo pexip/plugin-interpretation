@@ -114,8 +114,8 @@ export const InterpretationContextProvider = (props: {
 
       if (callTag != null) {
         const maxSize = 20
-        // The callTag can have the following format: `01234567890123456789?french,spanish`
-        // we want to obtain the part before the "?", the role as suffix, so it becomes:
+        // The callTag can have the following format: `01234567890123456789?french,english`
+        // We want to obtain the part before the "?" and append the role as suffix, so it becomes:
         // `01234567890123456789interpreter`
         let [input] = callTag.split('?')
         input = `${input}${state.role}`

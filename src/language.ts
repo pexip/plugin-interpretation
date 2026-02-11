@@ -21,14 +21,17 @@ const getAvailableLanguages = (): Language[] => {
   const { languages } = config
   const { rawData } = getUser()
   const { call_tag: callTag } = rawData
+
   if (callTag != null) {
     const parts = callTag.split('?')
     const minLength = 1
     if (parts.length > minLength) {
       const secondPartIndex = 1
-      const callTagLanguages = parts[secondPartIndex].split(',')
+      const callTagLanguages = parts[secondPartIndex]
+        .split(',')
+        .map((language) => language.trim().toLowerCase())
       const availableLanguages = languages.filter((language) =>
-        callTagLanguages.includes(language.name.toLowerCase())
+        callTagLanguages.includes(language.name.trim().toLowerCase())
       )
       const empty = 0
       if (availableLanguages.length > empty) {
@@ -36,5 +39,6 @@ const getAvailableLanguages = (): Language[] => {
       }
     }
   }
+
   return languages
 }

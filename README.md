@@ -444,7 +444,7 @@ we can add the following code in the participant policy:
   {# Read the available languages from the VMR description and add them as suffix to the callTag. #}
   {# e.g. description: Spanish, English #}
   {% if (service_config.description) %}
-    {% set callTag = callTag + "?" + service_config.description | lower | pex_regex_replace(" ", "") %}
+    {% set callTag = callTag + "?" + service_config.description | lower %}
   {% endif %}
 ```
 
