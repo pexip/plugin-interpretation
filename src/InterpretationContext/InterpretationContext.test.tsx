@@ -46,10 +46,9 @@ jest.mock('../config', () => {
   }
 })
 
+let mockUser = {}
 jest.mock('../user', () => ({
-  getUser: () => ({
-    displayName: 'user-display-name'
-  })
+  getUser: () => mockUser
 }))
 
 const mockSetButtonActive = jest.fn()
@@ -248,6 +247,10 @@ describe('InterpretationContext', () => {
     mockSetButtonActive.mockClear()
     pauseStub.mockClear()
     volumeStub.mockClear()
+    mockUser = {
+      displayName: 'user-display-name',
+      rawData: {}
+    }
   })
 
   it('should create a context', () => {
