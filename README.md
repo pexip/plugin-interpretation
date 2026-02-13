@@ -29,7 +29,8 @@ interpretation room and the other way around.
 ## How to use
 
 The interface and the plugin capabilities will depend in its configuration.
-Specially if the user is a **interpreter** or a **listener**, but there is a
+Specially if the user is a **interpreter** or a **listener**, but there are some
+common steps for both of them:
 
 - The user will start the interepretaion by pushing the interpretation button:
 
@@ -204,7 +205,48 @@ Your manifest will now look something like the following.
 
 An easy way to test the plugin is to use a local policy. In this case we
 designed a local policy for testing. It will allow every VMR with 2 or 6 digits
-and will use the pins `1234` for the hosts and `4321` for the guests.
+and will use the pins 1234 for the hosts and 4321 for the guests.
+
+```python
+{
+  {% if (call_info.local_alias | pex_regex_replace('^(\d{2}|\d{6})$',  '') == '')  %}
+    "action": "continue",
+    "result": {
+        "service_type": "conference",
+        "name": "{{call_info.local_alias}}",
+        "service_tag": "pexip-interpreter",
+        "description": "",
+        "call_tag": "",
+        "pin": "1234",
+        "guest_pin": "4321",
+        "guests_can_present": true,
+        "allow_guests": true,
+        "view": "four_mains_zero_pips",
+        "ivr_theme_name": "visitor_normal",
+        "locked": false,
+        "automatic_participants": []
+     }
+  {% elif service_config %}
+    {
+      "action" : "continue",
+      "result" : {{service_config | pex_to_json}}
+    }
+  {% else %}
+    {
+      "action" : "reject",
+      "result" : {}
+    }
+  {% endif %}
+}
+```
+
+## Configure local policy with dynamic PIN generation
+
+In the previous example we used static PINs for the interpretation rooms, but we
+can also generate them dynamically based on the `callTag` of the participant in
+the main room. This allows us to have a secure and deterministic way to generate
+the PINs for the interpretation rooms and the users don't need to introduce the
+PIN manually.
 
 The process is as follows:
 
@@ -369,55 +411,7 @@ mitigated in future versions:
   start the interpretation room and interact with the interpretation session via
   the API.
 
-### Join with a SIP device to a interpretation room (testing only)
-
-To join to an interpretation room through a SIP device you need to follow these
-steps:
-
-#### Create a new Call Routing Rule
-
-- Click on `Services > Call Routing`.
-- Click on `Add Call Routing Rule`.
-- Define the following parameters (leave the rest as default):
-  - **Name:** Interpretation SIP Join
-  - **Priority:** 1
-  - **Destination alias regex match** .\*
-- Click on `Save`.
-
-#### Create a VMR for interpretation
-
-- Click on `Services > Virtual Meeting Rooms`.
-- Click on `Add Virtual Meeting Room`.
-- Define the following parameters (leave the rest as default):
-  - **Name:** French room for 01
-  - **Host PIN:** 5678
-  - **Allow Guests:** true
-  - **Guest PIN:** 8765
-  - **Alias:** 010033
-  - **Advanced options**:
-    - **Guest can present:** false
-    - **Enable chat:** false
-    - **Conference capabilities:** Audio-only
-- Click on `Save`.
-
-#### Install a SIP softphone in your computer
-
-- You need to install a SIP softphone in your computer. You can use
-  [Zoiper](https://www.zoiper.com/en/voip-softphone/download/current) or any
-  other softphone that you like.
-
-- Configure the SIP softphone with a SIP account that can reach your Infinity
-  deployment.
-
-- Make a call to the VMR created in the previous step (e.g.
-  010033@192.168.1.101). Use the dialpad to enter the PIN for the host or guest.
-
-- In this case we will use the static VMR created before, so the host PIN is
-  `5678` and the guest PIN is `8765`. The reason is that the `local_alias` is
-  `sip:010033` and it doesn't match the regex for 2 or 6 digit VMRs from the
-  local policy.
-
-## Limit the number of languages
+## Limit the number of languages in the plugin per VMR
 
 By default, the plugin will show all the languages defined in the configuration
 file, but we can limit them per VMR. To do so, we can use the `description`
@@ -450,6 +444,54 @@ we can add the following code in the participant policy:
 
 This local policy will generate a `callTag` with the following format:
 `01234567890123456789?spanish,english`.
+
+## Join with a SIP device to a interpretation room (testing only)
+
+To join to an interpretation room through a SIP device you need to follow these
+steps:
+
+### Create a new Call Routing Rule
+
+- Click on `Services > Call Routing`.
+- Click on `Add Call Routing Rule`.
+- Define the following parameters (leave the rest as default):
+  - **Name:** Interpretation SIP Join
+  - **Priority:** 1
+  - **Destination alias regex match** .\*
+- Click on `Save`.
+
+### Create a VMR for interpretation
+
+- Click on `Services > Virtual Meeting Rooms`.
+- Click on `Add Virtual Meeting Room`.
+- Define the following parameters (leave the rest as default):
+  - **Name:** French room for 01
+  - **Host PIN:** 5678
+  - **Allow Guests:** true
+  - **Guest PIN:** 8765
+  - **Alias:** 010033
+  - **Advanced options**:
+    - **Guest can present:** false
+    - **Enable chat:** false
+    - **Conference capabilities:** Audio-only
+- Click on `Save`.
+
+### Install a SIP softphone in your computer
+
+- You need to install a SIP softphone in your computer. You can use
+  [Zoiper](https://www.zoiper.com/en/voip-softphone/download/current) or any
+  other softphone that you like.
+
+- Configure the SIP softphone with a SIP account that can reach your Infinity
+  deployment.
+
+- Make a call to the VMR created in the previous step (e.g.
+  010033@192.168.1.101). Use the dialpad to enter the PIN for the host or guest.
+
+- In this case we will use the static VMR created before, so the host PIN is
+  `5678` and the guest PIN is `8765`. The reason is that the `local_alias` is
+  `sip:010033` and it doesn't match the regex for 2 or 6 digit VMRs from the
+  local policy.
 
 ## Build for production
 
