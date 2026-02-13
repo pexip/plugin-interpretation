@@ -29,7 +29,8 @@ interpretation room and the other way around.
 ## How to use
 
 The interface and the plugin capabilities will depend in its configuration.
-Specially if the user is a **interpreter** or a **listener**, but there is a
+Specially if the user is a **interpreter** or a **listener**, but there are some
+common steps for both of them:
 
 - The user will start the interepretaion by pushing the interpretation button:
 
@@ -79,51 +80,99 @@ Specially if the user is a **interpreter** or a **listener**, but there is a
 
   </div>
 
-## Deploy a Web App branding for development
+## Configure the plugin
 
-The first step is to deploy a two brandings in Infinity that we will use for
-testing each one of these roles.
+The plugin has a config file (`config.json`) that drives how the plugin behaves.
 
-For the brandings we will use the following parameters:
+Here is an example of configuration:
 
-### Interpreter
+```json
+{
+  "role": "interpreter",
+  "reusePin": true,
+  "interpreter": {
+    "allowChangeDirection": false
+  },
+  "listener": {
+    "mainFloorVolume": 0.2,
+    "speakToInterpretationRoom": false
+  },
+  "languages": [
+    {
+      "code": "0033",
+      "name": "french"
+    },
+    {
+      "code": "0034",
+      "name": "spanish"
+    }
+  ]
+}
+```
 
-- **Port:** 5173
-- **Branding path:** /interpreter
+| Parameter                          | type                           | Description                                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| role                               | 'interpreter' \| 'listener'    | Indicates the role of the user that joins to the interpretation. We have two different roles: `interpreter` and `listener`.                                                                                                                                                                                                                                                                            |
+| reusePin                           | boolean                        | If `true` the application will reuse the pin of the main floor to the interpretation room. The only requirement is that the PIN should be included in the URL. It isn't supported if the user introduces the PIN manually.                                                                                                                                                                             |
+| interpreter.allowChangeDirection   | boolean                        | If `true` the interpreter will be able to change the direction. He will be able to translate from the main floor to the interpretation room and the other way around. He will also be able to listen to the interpretation room.                                                                                                                                                                       |
+| listener.mainFloorVolume           | number                         | Float value between 0 and 1 that indicates the percentage of the main floor that the `listener` will hear when he is connected to the interpretation room. The user will be able to change this manually.                                                                                                                                                                                              |
+| listener.speakToInterpretationRoom | boolean                        | If enabled, the listener will talk to the interpretation room instead of the main room.                                                                                                                                                                                                                                                                                                                |
+| languages                          | {code: string, name: string}[] | The list of all the available languages. Each language will have two values: `code` and `name`. The `code` is the suffix that will be attached to the conference name. For example, if for the main conference we have `conferenceAlias=123` and `code=0033`, the system will create a new audio conference with `conferenceAlias=1230033`. The `name` is used for the UI elements, such as selectors. |
 
-### Listener
+The parameter `allowChangeDirection` needs an additional explanation. With this
+parameter enabled, the interpreter can translate in both direction; from the
+main room to the interpretation room and the other way around. Here is a
+description of the behavior when the interpreter and listener are connected to
+the interpretation:
 
-- **Port:** 5174
-- **Branding path:** /listener
+- `interpreter.allowChangeDirection = false && listener.speakToInterpretationRoom = false`:
+  In this case the interpreter only can translate from the main room to a
+  interpretation room. Here are some details about each role:
 
-### Interpreter Bidirectional
+  | Device  | Role        | Main Room | Interpretation Room |
+  | ------- | ----------- | --------- | ------------------- |
+  | Mic     | Interpreter | ❌        | ✅                  |
+  | Mic     | Listener    | ✅        | ❌                  |
+  | Speaker | Interpreter | 100%      | 100 %               |
+  | Speaker | Listener    | ~10%      | ~90%                |
 
-- **Port:** 5175
-- **Branding path:** /interpreter-bidirectional
+  **Note:** The interpreter also have 100% volume in the Interpretation Room to
+  detect if another interpreter joins to the same channel. In other case, both
+  interpreters will start translating at the same time without being aware of
+  the other.
 
-### Listener Bidirectional
+- `interpreter.allowChangeDirection = true && listener.speakToInterpretationRoom = true`:
+  In this case the interpreter can change the direction of the translation. He
+  can translate from the Main Room to the Interpretation Room and the other way
+  around. In this case we have two other behavior based on the direction:
+  - **Main Room -> Interpretation Room:**
 
-- **Port:** 5176
-- **Branding path:** /listener-bidirectional
+    | Direction | Role        | Main Room | Interpretation Room |
+    | --------- | ----------- | --------- | ------------------- |
+    | Mic       | Interpreter | ❌        | ✅                  |
+    | Mic       | Listener    | ❌        | ✅                  |
+    | Speaker   | Interpreter | 100%      | 100%                |
+    | Speaker   | Listener    | ~10%      | ~90%                |
 
-This way, one branding will read a plugin from `http://localhost:5173`
-(interpreter) and the other from the address `http://localhost:5174` (listener),
-so we don't need to upload the plugin every time we want to test it and we can
-test both roles at the same time.
+    **Notes:** The interpreter will listen both channels at the same time. The
+    listener can only talk to the interpreter. The people of the Main Room won't
+    listen to the listener directly ever.
 
-To keep it easy, you will find the both brandings in the folder `dev-branding`
-of this project.
+  - **Interpretation Room -> Main Room:**
 
-The steps to install the interpreter branding are the following:
+    | Direction | Role        | Main Room | Interpretation Room |
+    | --------- | ----------- | --------- | ------------------- |
+    | Mic       | Interpreter | ✅        | ❌                  |
+    | Mic       | Listener    | ❌        | ✅                  |
+    | Speaker   | Interpreter | 100%      | 100%                |
+    | Speaker   | Listener    | ~10%      | ~90%                |
 
-- Compress the folder `dev-branding/interpreter/webapp3` in a file called
-  `webapp3.zip`.
-- Open the Infinity Management node interface and upload the new branding:
-  `Web App > Web App Branding`. You can call this new branding `interpreter`.
-- Create a path that points to the new branding: `Web App > Web App Paths`. The
-  path to the branding must be `interpreter`.
+    **Notes:** Now the interpreter will talk to the main room and the listener
+    can still follow the conversation (~10% volume).
 
-Now you have to repeat the same process for the `listener`.
+In both cases, if the interpreter leaves the interpretation room or if he is
+muted, we put the volume of the main room to 100% for the listener and we
+disable the slider.
 
 ### Configuration requirements starting from Infinity v37
 
@@ -152,43 +201,52 @@ Your manifest will now look something like the following.
 }
 ```
 
-## Run for development
-
-Once the branding is deployed we need to configure some parameters:
-
-- Edit `vite.json` with your environment parameters. You only have to modify the
-  `infinityUrl` parameter with the URL of your Infinity deployment:
-
-```json
-{
-  "infinityUrl": "https://192.168.1.101",
-  ...
-}
-```
-
-- Install all the dependencies:
-
-```bash
-$ npm i
-```
-
-- Run the dev environment:
-
-```bash
-$ npm run interpreter
-```
-
-or
-
-```bash
-$ npm run listener
-```
-
 ## Configure local policy
 
 An easy way to test the plugin is to use a local policy. In this case we
 designed a local policy for testing. It will allow every VMR with 2 or 6 digits
-and will use the pins `1234` for the hosts and `4321` for the guests.
+and will use the pins 1234 for the hosts and 4321 for the guests.
+
+```python
+{
+  {% if (call_info.local_alias | pex_regex_replace('^(\d{2}|\d{6})$',  '') == '')  %}
+    "action": "continue",
+    "result": {
+        "service_type": "conference",
+        "name": "{{call_info.local_alias}}",
+        "service_tag": "pexip-interpreter",
+        "description": "",
+        "call_tag": "",
+        "pin": "1234",
+        "guest_pin": "4321",
+        "guests_can_present": true,
+        "allow_guests": true,
+        "view": "four_mains_zero_pips",
+        "ivr_theme_name": "visitor_normal",
+        "locked": false,
+        "automatic_participants": []
+     }
+  {% elif service_config %}
+    {
+      "action" : "continue",
+      "result" : {{service_config | pex_to_json}}
+    }
+  {% else %}
+    {
+      "action" : "reject",
+      "result" : {}
+    }
+  {% endif %}
+}
+```
+
+## Configure local policy with dynamic PIN generation
+
+In the previous example we used static PINs for the interpretation rooms, but we
+can also generate them dynamically based on the `callTag` of the participant in
+the main room. This allows us to have a secure and deterministic way to generate
+the PINs for the interpretation rooms and the users don't need to introduce the
+PIN manually.
 
 The process is as follows:
 
@@ -353,12 +411,46 @@ mitigated in future versions:
   start the interpretation room and interact with the interpretation session via
   the API.
 
-### Join with a SIP device to a interpretation room (testing only)
+## Limit the number of languages in the plugin per VMR
+
+By default, the plugin will show all the languages defined in the configuration
+file, but we can limit them per VMR. To do so, we can use the `description`
+field of the Virtual Meeting Room configuration to define the subset of
+languages that will be available for a specific VMR.
+
+The languages should be defined in the `description` field separated by commas.
+For example, if we want to show only Spanish and English, we can add the
+following value in the `description` field:
+
+<div align='center'>
+  
+![Management node](./images/management-node.png)
+
+</div>
+
+### Participant policy
+
+Now we will add a `description` to the `callTag` with the languages that we want
+to show in the plugin. For example, if we want to show only Spanish and English,
+we can add the following code in the participant policy:
+
+```python
+  {# Read the available languages from the VMR description and add them as suffix to the callTag. #}
+  {# e.g. description: Spanish, English #}
+  {% if (service_config.description) %}
+    {% set callTag = callTag + "?" + service_config.description | lower %}
+  {% endif %}
+```
+
+This local policy will generate a `callTag` with the following format:
+`01234567890123456789?spanish,english`.
+
+## Join with a SIP device to a interpretation room (testing only)
 
 To join to an interpretation room through a SIP device you need to follow these
 steps:
 
-#### Create a new Call Routing Rule
+### Create a new Call Routing Rule
 
 - Click on `Services > Call Routing`.
 - Click on `Add Call Routing Rule`.
@@ -368,7 +460,7 @@ steps:
   - **Destination alias regex match** .\*
 - Click on `Save`.
 
-#### Create a VMR for interpretation
+### Create a VMR for interpretation
 
 - Click on `Services > Virtual Meeting Rooms`.
 - Click on `Add Virtual Meeting Room`.
@@ -384,7 +476,7 @@ steps:
     - **Conference capabilities:** Audio-only
 - Click on `Save`.
 
-#### Install a SIP softphone in your computer
+### Install a SIP softphone in your computer
 
 - You need to install a SIP softphone in your computer. You can use
   [Zoiper](https://www.zoiper.com/en/voip-softphone/download/current) or any
@@ -417,96 +509,34 @@ $ npm run build
 
 Congrats! Your package is ready and it will be available in the `dist` folder.
 
-## Configure the plugin
+## Run for development
 
-The plugin has a config file (`config.json`) that drives how the plugin behaves.
+Once the branding is deployed we need to configure some parameters:
 
-Here is an example of configuration:
+- Edit `vite.json` with your environment parameters. You only have to modify the
+  `infinityUrl` parameter with the URL of your Infinity deployment:
 
 ```json
 {
-  "role": "interpreter",
-  "reusePin": true,
-  "interpreter": {
-    "allowChangeDirection": false
-  },
-  "listener": {
-    "mainFloorVolume": 0.2,
-    "speakToInterpretationRoom": false
-  },
-  "languages": [
-    {
-      "code": "0033",
-      "name": "french"
-    },
-    {
-      "code": "0034",
-      "name": "spanish"
-    }
-  ]
+  "infinityUrl": "https://192.168.1.101",
+  ...
 }
 ```
 
-| Parameter                          | type                           | Description                                                                                                                                                                                                                                                                                                                                                                                            |
-| ---------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| role                               | 'interpreter' \| 'listener'    | Indicates the role of the user that joins to the interpretation. We have two different roles: `interpreter` and `listener`.                                                                                                                                                                                                                                                                            |
-| reusePin                           | boolean                        | If `true` the application will reuse the pin of the main floor to the interpretation room. The only requirement is that the PIN should be included in the URL. It isn't supported if the user introduce the PIN manually.                                                                                                                                                                              |
-| interpreter.allowChangeDirection   | boolean                        | If `true` the interpreter will be able to change the direction. He will be able to translate from the main floor to the interpretation room and the other way around. He will also be able to listen to the interpretation room.                                                                                                                                                                       |
-| listener.mainFloorVolume           | number                         | Float value between 0 and 1 that indicates the percentage of the main floor that the `listener` will hear when he is connected to the interpretation room. The user will be able to change this manually.                                                                                                                                                                                              |
-| listener.speakToInterpretationRoom | boolean                        | If enable, the listener will talk to the interpretation room instead of the main room.                                                                                                                                                                                                                                                                                                                 |
-| languages                          | {code: string, name: string}[] | The list of all the available languages. Each language will have two values: `code` and `name`. The `code` is the suffix that will be attached to the conference name. For example, if for the main conference we have `conferenceAlias=123` and `code=0033`, the system will create a new audio conference with `conferenceAlias=1230033`. The `name` is used for the UI elements, such as selectors. |
+- Install all the dependencies:
 
-The parameter `allowChangeDirection` needs an additional explanation. With this
-parameter enabled, the interpreter can translate in both direction; from the
-main room to the interpretation room and the other way around. Here is a
-description of the behavior when the interpreter and listener are connected to
-the interpretation:
+```bash
+$ npm i
+```
 
-- `interpreter.allowChangeDirection = false && listener.speakToInterpretationRoom = false`:
-  In this case the interpreter only can translate from the main room to a
-  interpretation room. Here are some details about each role:
+- Run the dev environment:
 
-  | Device  | Role        | Main Room | Interpretation Room |
-  | ------- | ----------- | --------- | ------------------- |
-  | Mic     | Interpreter | ❌        | ✅                  |
-  | Mic     | Listener    | ✅        | ❌                  |
-  | Speaker | Interpreter | 100%      | 100 %               |
-  | Speaker | Listener    | ~10%      | ~90%                |
+```bash
+$ npm run interpreter
+```
 
-  **Note:** The interpreter also have 100% volume in the Interpretation Room to
-  detect if another interpreter joins to the same channel. In other case, both
-  interpreters will start translating at the same time without being aware of
-  the other.
+or
 
-- `interpreter.allowChangeDirection = true && listener.speakToInterpretationRoom = true`:
-  In this case the interpreter can change the direction of the translation. He
-  can translate from the Main Room to the Interpretation Room and the other way
-  around. In this case we have two other behavior based on the direction:
-  - **Main Room -> Interpretation Room:**
-
-    | Direction | Role        | Main Room | Interpretation Room |
-    | --------- | ----------- | --------- | ------------------- |
-    | Mic       | Interpreter | ❌        | ✅                  |
-    | Mic       | Listener    | ❌        | ✅                  |
-    | Speaker   | Interpreter | 100%      | 100%                |
-    | Speaker   | Listener    | ~10%      | ~90%                |
-
-    **Notes:** The interpreter will listen both channels at the same time. The
-    listener can only talk to the interpreter. The people of the Main Room won't
-    listen to the listener directly ever.
-
-  - **Interpretation Room -> Main Room:**
-
-    | Direction | Role        | Main Room | Interpretation Room |
-    | --------- | ----------- | --------- | ------------------- |
-    | Mic       | Interpreter | ✅        | ❌                  |
-    | Mic       | Listener    | ❌        | ✅                  |
-    | Speaker   | Interpreter | 100%      | 100%                |
-    | Speaker   | Listener    | ~10%      | ~90%                |
-
-    **Notes:** Now the interpreter will talk to the main room and the listener
-    can still follow the conversation (~10% volume).
-
-In both cases, if the interpreter leaves the interpretation room or if he is
-muted, we put the volume of the main room to 100% for the listener and we
-disable the slider.
+```bash
+$ npm run listener
+```
