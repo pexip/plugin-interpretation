@@ -146,6 +146,18 @@ jest.mock(
   { virtual: true }
 )
 
+const mockHashBase = '01234567890123456789'
+jest.mock('../utils', () => {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- we need to get the actual utils to keep the other functions unchanged
+  const originalUtils = jest.requireActual('../utils')
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- we need to return the mock implementation of pexHash
+  return {
+    ...originalUtils,
+    pexHash: async (input: string): Promise<string> =>
+      await Promise.resolve(`${mockHashBase}${mockHashBase}`)
+  }
+})
+
 let newVolume = 0
 const InterpretationContextTester = (): React.JSX.Element => {
   const {
@@ -157,10 +169,12 @@ const InterpretationContextTester = (): React.JSX.Element => {
     changeMute,
     changeVolume,
     minimize,
+    setPin,
     state
   } = useInterpretationContext()
   const { role, connected, language, direction, muted, volume, minimized } =
     state
+  setPin('')
   return (
     <div data-testid="InterpretationContextTester">
       <span data-testid="role">{role}</span>
@@ -354,7 +368,7 @@ describe('InterpretationContext', () => {
     })
 
     describe('protected by pin', () => {
-      beforeAll(async () => {
+      beforeEach(async () => {
         protectedByPin = true
         render(
           <InterpretationContextProvider>
@@ -386,7 +400,7 @@ describe('InterpretationContext', () => {
     })
 
     describe('unprotected by pin', () => {
-      beforeAll(async () => {
+      beforeEach(async () => {
         protectedByPin = false
         render(
           <InterpretationContextProvider>
@@ -413,6 +427,76 @@ describe('InterpretationContext', () => {
         expect(volume.innerHTML).toBe(expectedVolume.toString())
         const direction = screen.getByTestId('direction')
         expect(direction.innerHTML).toBe(expectedDirection)
+      })
+    })
+
+    describe('auto-authenticate through callTag', () => {
+      beforeEach(() => {
+        render(
+          <InterpretationContextProvider>
+            <InterpretationContextTester />
+          </InterpretationContextProvider>
+        )
+      })
+
+      it('should authenticate if the callTag contains a valid 20-digit prefix', async () => {
+        mockUser = {
+          rawData: {
+            call_tag: '01234567890123456789'
+          }
+        }
+
+        await waitFor(() => {
+          const button = screen.getByTestId('connect')
+          fireEvent.click(button)
+        })
+
+        expect(mockInfinityCall).toHaveBeenCalledTimes(CALLED_ONCE)
+        expect(mockInfinityCall).toHaveBeenCalledWith(
+          expect.objectContaining({
+            pin: mockHashBase
+          })
+        )
+      })
+
+      it('should authenticate if the callTag contains a valid 20-digit prefix and suffix with languages', async () => {
+        mockUser = {
+          rawData: {
+            call_tag: '01234567890123456789?english,french'
+          }
+        }
+
+        await waitFor(() => {
+          const button = screen.getByTestId('connect')
+          fireEvent.click(button)
+        })
+
+        expect(mockInfinityCall).toHaveBeenCalledTimes(CALLED_ONCE)
+        expect(mockInfinityCall).toHaveBeenCalledWith(
+          expect.objectContaining({
+            pin: mockHashBase
+          })
+        )
+      })
+
+      it('should not authenticate if the callTag does not contain a valid 20-digit prefix', async () => {
+        mockUser = {
+          rawData: {
+            call_tag: 'invalidcalltag?english,french'
+          }
+        }
+
+        await waitFor(() => {
+          const button = screen.getByTestId('connect')
+          fireEvent.click(button)
+        })
+
+        expect(mockInfinityCall).toHaveBeenCalledTimes(CALLED_ONCE)
+        expect(mockInfinityCall).toHaveBeenCalledWith(
+          expect.not.objectContaining({
+            pin: mockHashBase
+          })
+        )
       })
     })
 
