@@ -69,6 +69,12 @@ jest.mock('../../config', () => ({
   }
 }))
 
+jest.mock('../../user', () => ({
+  getUser: () => ({
+    rawData: {}
+  })
+}))
+
 describe('AdvanceLanguageSelector', () => {
   it('should render', () => {
     render(<AdvanceLanguageSelector />)
