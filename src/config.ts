@@ -18,4 +18,9 @@ const response = await fetch('./config.json')
 // eslint-disable-next-line @typescript-eslint/no-unsafe-type-assertion -- no-unsafe-argument
 const config: Config = (await response.json()) as Config
 
+config.languages = config.languages.map((language) => ({
+  ...language,
+  name: language.name.trim().toLowerCase()
+}))
+
 export { config }

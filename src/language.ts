@@ -31,7 +31,7 @@ const getAvailableLanguages = (): Language[] => {
         .split(',')
         .map((language) => language.trim().toLowerCase())
       const availableLanguages = languages.filter((language) =>
-        callTagLanguages.includes(language.name.trim().toLowerCase())
+        callTagLanguages.includes(language.name)
       )
       const empty = 0
       if (availableLanguages.length > empty) {
