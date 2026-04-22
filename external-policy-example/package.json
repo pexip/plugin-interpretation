@@ -1,0 +1,14 @@
+{
+  "name": "interpretation-external-policy-example",
+  "version": "1.0.0",
+  "description": "External policy server example for the Pexip Interpretation Plugin",
+  "main": "src/index.mjs",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.mjs",
+    "dev": "node --watch src/index.mjs"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}
